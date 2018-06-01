@@ -5,3 +5,7 @@ Mobile Particle Matter Sensor
 based on Feinstaubsensor from luftdaten.info hardware and Software plus MiCS-4541 Breakout
 
 SDS011 Library with reading in Query Reporting Mode [Factory Default is active reporting mode]
+
+
+
+I am looking for help to interpret the values from the MiCS-4514 on the CJMCU-4541 Breakout Board!
