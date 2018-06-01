@@ -1,0 +1,994 @@
+/*
+==============================================================================================================================
+                              
+  M O B I S E N S   16                                          
+                                                                            
+  Feinstaubsensormobil mit SDS011, BME280(Temperatur, Feuchte, Luftdruck), GPS, OLED, ADS1115 PortExpander für CO, NO2                         
+                                                                            
+           - Anschlußübersicht der Sensoren an NodeMCU -                                     1. juni 18       
+	   
+	   
+	   BME280 weit weg von Hitzequellen MiCS-4514 und ESP8266 positionieren
+	   
+	   
+==============================================================================================================================
+
+         
+	 Übersicht und Anschlußschema
+	 ============================                                                                   
+
+                                                                  
+								            
+                                                                            
+       wlan       Powerbank5V     220V Netz                                   
+        ~           6000mAh        :                                        
+        ~             :            :                                        
+        ~             :            :                                        
+	~      /----- - - - - - Netzteil microUSB  (Nodemcu Vin 5-9 Volt möglich)       5  V    2 A 
+	~     /  
+	       
+      Nodemcu                                                                           5  V  170 + 130  mA  
+      !  !  !                                                                                                                           
+      !  !  !    
+      !  !  !                                                           
+      !  !  !                   virt PIN      PIN   an NodeMCU.PINs                     V    / A             
+      !  !  !                   --------      -------------------------------------------------------                
+      !  !  !                                                               
+      !  !  !                                                               
+      !  !  !- seriell GPS Neo6M (PIN9 )      RXD5(TX)  TXD6(RX)    R5 3V3  /R6  GND    3,3V    0,8mA   
+      !  !                                                                  
+      !  !- I2C OLED Anzeige        -         SDA-D4    SCL-D3      R5 3V3  /R6  GND    3,3V   25  mA  
+      !  !
+      !  !- I2C BME280           (PIN11)      SDA-D4    SCL-D3      R5 3V3  /R6  GND    3,3V    0,3mA   jetzt 5V da nach aussen verlegt wgen Temperatureinfluß ESP und CJMCU
+      !  !
+      !  !
+      !  !  
+      !  !                                                                    
+      !  !- I2C Port-Exp ADS1115    -         SDA-D4    SCL-D3      R5 3V3  /R6  GND    5  V    0,3mA   
+      !         !   !   :_A2   :_A3                                        
+      !         !   !                                                 
+      !         !   !-CJMCU-4541-(PIN ?)  NO2 NOX      ADS(A0)      L15 5V  /L14 GND    5  V   88  mA   == direkt 5V ext
+      !         !----- analog 2*-(PIN ?)  CO  RED      ADS(A1)      L15 5V  /L14 GND    5  V   60  mA   == direkt 5V ext
+      !                                       PRE  SCHALTEN D7                                                                     
+      !                                                                     
+      !-seriell SDS011 Feinstaub (PIN1 )      TX-D1(RX) RX-D2(TX)   L15 5V  /L14 GND    5  V  120  mA   == direkt 5V ext
+                                                                                              =======   
+                                                                                              294,4mA  + 130 -- durchleitung (max 300mA ???)
+								                              464,4mA  + 130  total
+	
+  /*---------------------------------*/
+  
+  
+      Kapazitätsrechnung: 6000 mAh * 80%   =   4800 / 600   =   8 h bei Dauerbetrieb => mit 90 s Pause ca 24 h  bis 20% Restladung Powerbank
+      
+      
+Rechts
+      D8 NodeMCU               noch ungenutzt	
+      RX NodeMCU  (usb)        noch ungenutzt
+      TX NodeMCU  (usb)        noch ungenutzt
+
+Links      
+      A0 NodeMCU Analogeingang noch ungenutzt
+      S3 NodeMCU  (SPI)        noch ungenutzt  (SPIFFS SPI FlashFileSystem ?)
+      S2 NodeMCU  (SPI)        noch ungenutzt
+      S1 NodeMCU  (SPI)        noch ungenutzt
+      SC NodeMCU  (SPI)        noch ungenutzt
+      SD NodeMCU  (SPI)        noch ungenutzt
+      SK NodeMCU  (SPI)        noch ungenutzt
+      
+      EN NodeMCU               noch ungenutzt
+      
+      
+      A2 ADS1115 Analogeingang noch ungenutzt  (evtl. Analog port SDS)
+      A3 ADS1115 Analogeingang noch ungenutzt	
+	
+					
+      [RST mit D0 verbunden um DeepSleep (stop mit zeitgesteuertem Reset) zu ermöglichen - dann kann D0 nicht weiter genutzt werden]
+					
+											           
+==============================================================================================================================
+
+            
+==============================================================================================================================
+
+           Schritte zum testen                                              
+
+==============================================================================================================================
+
+
+einzeltst SW teile zum erkennen sensoren
+bme280 erfolg
+oled   erfolg
+ads    erfolg
+gps    erfolg
+sds    erfolg
+cjmcu  erfolg
+
+
+
+zusammenführen 
+ Ausgabe auf Oled umstellen 
+ ( -->> groß 5 schirme 1 Datum & Uhrzeit & LAT & LON & Höhe  
+                       2 Temp & Druck & Feuchte  
+                       3 PM10 & PM10c  
+		       4 PM2.5 & PM2.5c 
+		       5 NOX & CO )
+		       
+ oder 1 Schirm mit allem		       
+		       
+ gps  
+ bme280 
+ ads
+ sds
+ cjmcu
+ 
+ 
+ 
+ 
+  
+
+==============================================================================================================================
+==============================================================================================================================
+ NODEMCU  ESP2866  Prozessor und Wlan  Version 3  -- Schaltbild
+
+==============================================================================================================================
+
+
+
+   
+   
+ Beim Anschluss von Sensoren mit 5V bitte die Board-Version beachten. ->NodeMCU Version 3 liefert 5V an VU ( L 3 )
+
+ 
+
+ Angeschlossen gemäß luftdaten.info + erw. ads1115 für cjmcu ext mikrocusb-Stromversorgung
+ -----------------------------------------------------------------------------------------
+ 
+ 
+ 
+ 
+ 
+                                                             Stecker für sds011
+							     /
+		  ----------268 mA 5V-----------------------|=| ------------------------------------------------------------!
+                  !  !--------------------------------------| | -----------------------------GND--------------------------  !
+		  !  !                                      | |                                                           ! !
+		  !  !  !----------------------!            | |                                                           ! !
+		  !  !  !         ~~~          !            | |                                                           ! !
+                  !  !  !  - A0          D0  - RST          | |                                                           ! !
+                  !  !  !  - GND         D1  - TX SDS011----| |                                                           ! !
+                  !  !  !  - VU5         D2  - RX SDS011----|=|                                                           ! !
+                  1  !  !    S3       RX1D3  - -------------------------SCL ----------------------------OLED -----!       ! !
+                  1  !  !    S2       TX1D4  - -------------------------SDA ----------------------------BME280--- ! !-------!-------!
+                  1  !  !    S1         3V3  - BME & OLED 2,4mA  ---------------------3V3--------------! !      ! ! ! !-----------! !
+                  1  !  1    SC         GND  - BME & OLED 2,4mA  ---------------------GND----------------!      ADS1115 ---A0--- CJMCU-4541 ADS(A0) NOX NO2
+                  1  !  1    SD        RXD5  - TX GPS                                                           !  !  !----A1--- CJMCU-4541 ADS(A1) RED CO
+                  1  !  !    SK        TXD6  - RX GPS                                                       --- A2 A3 ---
+                  1  !  1  - GND     RX2 D7  ----------------------------------------------------------------------------------- CJMCU-4541 PRE schalten Heizung
+                  1  !  !  - 3V3     TX2 D8  -
+                  !  !  !    EN      RX0 RX                    
+		  !  !  D0 - RST     TX0 TX                   
+        !---------(--------- GND        GND  - GPS     
+	! ! ------!--------- Vin5V      3V3  - GPS 25mA
+        ! !	                   ! !   
+      [müUSB]                     [µUSB]   
+        ext                  int R9RX0/R10TX0 
+
+ <--------------------------------------------------------->
+ 
+ Aenderungen ggü Planung
+ 
+ SCL auf D3 SDA auf D4 getauscht wegen Lötfehler, Display test i.O.  eingepflegt
+ 
+ <--------------------------------------------------------->
+ 
+	    
+	    RST mit D0 verbinden um DeepSleep (stop mit zeitgesteuertem Reset) zu ermöglichen
+	    
+	    
+	    Abfrage cjmcu :
+	    
+	    https://github.com/ShawnHymel/MICS-4514_CO_and_NOx_Sensor_Breakout/blob/master/Firmware/MICS-4514_Test/MICS-4514_Test.ino
+ 
+ <--------------------------------------------------------->
+
+i2c address
+
+bme280    (0x77)    https://github.com/adafruit/Adafruit_BME280_Library/blob/master/Adafruit_BME280.h#L133
+                    Mine however is running on 0x76 address (many thanks to I2C scanner)
+		    
+ads1115   (0x48)    http://henrysbench.capnfatz.com/henrys-bench/arduino-voltage-measurements/arduino-ads1115-module-getting-started-tutorial/
+                    The address is preset to 0x48 (ADDR to GND)  0x49 (Addr to VDD)  0x4A (Addr to SDA)  0x4B (Addr to SCL)		    
+
+OLED      (0x78) oder 0x7A  (umlöten)   www.diymore.cc  worldchips  gelb blau
+
+
+
+
+Scanning...
+I2C device found at address 0x3C  !   OLED   getestet
+I2C device found at address 0x48  !   ADS115 getestet
+I2C device found at address 0x76  !   BME280 getestet
+
+
+ <--------------------------------------------------------->
+
+ Spannung  5 - 9 V
+
+NODEMCU PIN und GPIO  (General Purpose Input Output = allzweckeinausgabeanschlüsse)
+====================
+
+                         L     M      R 
+		        
+		            ~~~~~~~    
+                    1  - A0          D0  -   
+                    2  - GND         D1  -
+                    3  - VU5         D2  -
+                    4    S3       RX1D3  -
+                    5    S2       TX1D4  -
+                    6    S1         3V3  -
+                    7    SC         GND  -
+                    8    SD        RXD5  - 
+                    9    SK        TXD6  - 
+                   10  - GND      RX2D7  -
+                   11  - 3V3      TX2D8  -
+                   12    EN       RX0RX                    
+		   13  - RST      TX0TX                   
+                   14  - GND        GND  -      
+	           15  - Vin5V      3V3  - 
+		              ! !	                      
+                            [müUSB]                         
+
+
+Einige Ports sind auf dem NodeMCU-Board oder auch ESP-12E-Modul selbst in Verwendung.
+Hier eine Liste der intern verwendeten Signale (zusammengeklaubt)
+ 
+Rechts
+
+Pin  Druck  GPIO    Zusätzl.  Fkt.          Beschr.
+---  ---    ------  ----------------------  ---------------------------------------------------------------------------------------------------------------
+01   D0     GPIO16  USER   WAKE             GPIO16 read/write. ODER RST f DeepSleep, No support for open-drain/interrupt/pwm/i2c/ow., Led Kathode liegt an
+02   D1     GPIO05  SCL                     I2C_SCL
+03   D2     GPIO04  SDA                     I2C_SDA
+04   D3     GPIO00  RXD1   FLASH  SPI_CS2   Geht an Taster FLASH, kann jedoch ansonsten genutzt werden
+05   D4     GPIO02  TXD1   I2SO_WS          Blaue LED des ESP12E Moduls
+06   3V3                                    Spannung Ausgang
+07   GND                                    Masse
+08   D5     GPIO14         HS_SPI_CLK       SPI
+09   D6     GPIO12         H_SPI_Q_MISO     SPI
+10   D7     GPIO13  RXD2   H_SPI_D_MOSI     SPI
+11   D8     GPIO15  TXD2   H_SPI_CS         SPI
+12   D9     GPIO03  RXD0   I2SO_Data        nicht nutzbar Wird für USB-Schnittstelle benötigt
+13   D10    GPIO01  TXD0   SPI_CS1          nicht nutzbar Wird für USB-Schnittstelle benötigt
+14   GND                                    Masse
+15   3V3                                    Spannung Ausgang
+
+
+MITTE
+
+microUSB  Spannungsversorgung und Ausgang seriell (D9/D10 umgeleitet)
+
+
+LINKS
+
+Pin Druck   GPIO     Zusätzl.               Beschr.
+
+01  A0               ADC    TOUT            Analogeingang
+02  GND                                     Masse
+03  VU                                      USB Spannungsausgang (aus USB = 5 Volt)
+04  S3      GPIO10   SDD3   SPIWP           nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+05  S2      GPIO09   SDD2   SPIHD           nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+06  S1      GPIO08   SDD1   SPID   MOSI     nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+07  SC      GPIO11   SDCMD  SPICS0 CS       nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+08  SD      GPIO07   SDD0   SPIQ   MISO     nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+09  SK      GPIO06   SDCL   SPICLK SCLK     nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+10  GND                                     Masse
+11  3V3                                     Spannung Ausgang
+12  EN
+13  RST                                     (RST muss mit D0 verbunden sein um DEEPSLEEP zu ermöglichen)
+14  GND                                     Masse Eingang
+15  Vin                                     Spannung Eingang 5-9 Volt
+
+
+
+ <--------------------------------------------------------->
+
+https://github.com/esp8266/Arduino/issues/584
+ 
+                     PIN    GPIO
+static const uint8_t D0   = 16;
+static const uint8_t D1   = 5;
+static const uint8_t D2   = 4;
+static const uint8_t D3   = 0;
+static const uint8_t D4   = 2;
+static const uint8_t D5   = 14;
+static const uint8_t D6   = 12;
+static const uint8_t D7   = 13;
+static const uint8_t D8   = 15;
+
+
+static const uint8_t D9   = 3;               nicht nutzbar Wird für USB-Schnittstelle benötigt
+static const uint8_t D10  = 1;               nicht nutzbar Wird für USB-Schnittstelle benötigt
+
+
+1 Analogeingang      A0
+
+
+
+
+Insgesamt NodeMCU: Neun Pins plus A0 sind nutzbar
+
+  
+ <--------------------------------------------------------->
+ https://steve.fi/Hardware/nodemcu-pins/
+ 
+I2C
+
+    I2C can be used to connect up to 127 nodes via a bus 
+    that only requires two data wires, known as SDA and SCL.
+
+        SCL=GPIO05 => D1
+	SDA=GPIO04 => D2
+
+SPI
+
+    SPI is much simpler than I2C. 
+    Master and slave are linked by three data wires, usually called MISO, 
+    (Master in, Slave out), MOSI (Master out, Slave in) and M-CLK.
+
+               M-CLK => D5
+	       MISO  => D6
+               MOSI  => D7
+    (SPI Bus SS (CS) => D8.)
+
+==============================================================================================================================
+==============================================================================================================================
+
+  <---------------------------------------------------------->
+ 
+
+ 
+ Platine    
+ =======
+ 
+ 1 Platine mit lötösen Größe 100*160
+ 
+ 1 Stiftleistenbuchse  5 polig 1 reihig  für SDS011
+ 
+ 1 Micro-usb-buchse B   auf DIP Breakout für ext Stromversorgung
+ 
+ 2 Buchsenleiste      15 polig 1 reihig  für Nodemcu
+
+ 1 stiftleiste         4 polig 1 reihig  für BME280
+
+ 1 Buchsenleiste       4 polig 1 reihig  für BME280
+ 
+ 1 stiftleiste         4 polig 1 reihig  für OLED
+
+ 1 Buchsenleiste       4 polig 1 reihig  für OLED
+  
+ 1 Buchsenleiste       4 polig 1 reihig  für GPS
+ 
+ 1 Buchsenleiste      10 polig 1 reihig  für ADS1115
+ 
+ 1 Buchsenleiste       5 polig 1 reihig  für CJMCU-4541
+ 
+ ---------------------------------------------------------
+ 
+ 2 stiftleiste         4 polig 1 reihig
+ 3 Buchsenleiste       4 polig 1 reihig
+ 1 Buchsenleiste      10 polig 1 reihig
+ 1 Buchsenleiste       5 polig 1 reihig
+ 2 Buchsenleiste      15 polig 1 reihig
+ 1 Stiftleistenbuchse  5 polig 1 reihig 
+ 1 Euro-Platine Lochraster 2.54 Lötösen Größe 100*160
+ 
+ Conrad 9 euro ( Platine, zwei buchsenleisten40 1 Stiftleisten 40 1 Stiftleistenbuchse(SDS) )
+ 
+
+fehlt
+---------
+ Abstandhalter  ABS M3 und Schrauben und Muttern
+ 
+ 3 15mm für SDS011
+ 
+ 2 11mm für micro-USB-DIP
+ 
+ // 2 11mm für NodeMCU
+ 
+ 2 11mm für OLED
+ 
+ 1 Klotz 25*25*11mm für OLED Antenne + doppels Klebeband 2* + fixierung Drahtbügel Kabelbinder
+ 
+ // 2 11mm für ADS1115
+ 
+ // 1 11mm für BME280
+ 
+ 2 11mm für CJMCU
+ 
+ 
+ 2 Acrylplatten 165 *105 * 2 mm
+ 6 Abstandhalter für Arylplatten ca 32 mm und Schrauben m3 nach unten zzgl dicke platte (2) 
+   32 mm innen aussen gewindelänge inkl platine! Schrauben mit breiten kopf für Acrylplatte
+ 6 Abstandhalter für Arylplatten ca 21 mm und Schrauben m3 nach oben  zzgl dicke platte (2)
+   21 mm innen innen                             Schrauben mit breiten kopf für Acrylplatte
+
+ 
+ --------------------------------------------------------------------------------------------------
+ 
+
+==============================================================================================================================
+
+ ADS1115 Portreplikator Analog auf i2c
+==============================================================================================================================
+
+ Anschlüsse
+     VDD           -> 
+     GND           ->
+     SCL           ->
+     SDA           ->
+     ADDR          ->
+     ALRT          ->
+     A0            ->
+     A1            ->
+     A2            ->
+     A3            ->
+     
+     
+ Spannung                       VDD 2,0 - 5,5 V
+ Axin MAX                       VDD 
+ Stromverbrauch                 0,15 mA
+ Analog Input Strom kurzzeitig  100mA
+ Analog Input Strom Dauer       10 mA
+ Data Rate                      8SPS - 860SPS
+ Auflösung                      16 Bit
+ Temperatur bis                 150 °C
+
+
+  i2c ads1115   (0x48)    http://henrysbench.capnfatz.com/henrys-bench/arduino-voltage-measurements/arduino-ads1115-module-getting-started-tutorial/
+                          The address is preset to 0x48 (ADDR to GND)  0x49 (Addr to VDD)  0x4A (Addr to SDA)  0x4B (Addr to SCL)	
+
+ 
+
+==============================================================================================================================
+
+
+==============================================================================================================================
+
+   OLED displays with SSD1306 (I2C, 128x64 pixels)
+==============================================================================================================================
+
+    VCC -> Pin VU
+    GND -> Pin GND
+    SCL -> Pin D4 (GPIO2)
+    SDA -> Pin D3 (GPIO0)
+
+    
+    OLED      0x3C             (0x78) oder 0x7A  (umlöten)   www.diymore.cc  worldchips  gelb blau
+
+
+ Spannung                       3,3  V  (5V?)
+ Stromverbrauch                 0,25 mA
+
+
+    128 * 64  (128*16 Orange) 1 Zeile 16 hoch (128*48 blaugrün)   4 Zeile a 12 Pixel hoch
+    8*8 Zeichen = 8 Zeilen a 16 Zeichen (2 orange 6 Blau)
+    12*16       = 4 Zeilen a 10 Zeichen 
+    
+ 
+       
+
+==============================================================================================================================
+                                                                            
+==============================================================================================================================
+
+   Feinstaubsensor  sds011  inovatec
+
+                                                                            
+==============================================================================================================================
+
+   Anschluesse 
+
+
+    Pin 1 (TX)       seriell     -> Pin D1   (GPIO5)
+    Pin 2 (RX)       seriell     -> Pin D2   (GPIO4)
+    Pin 3 (GND)                  -> GND
+    Pin 4 (2.5m PWM) analog      -> unused - möglich zusätzlich ADS115 ?
+    Pin 5 (5V)                   -> VU
+    Pin 6 (1m PWM)   analog      -> unused - möglich zusätzlich ADS115 ?
+    PIN 7 Not Connected
+
+
+    Versorgungsspannung   2-5V
+
+    Arbeitsbereich
+    Temperatur            -10  -  +50 °C
+    Feuchtigkeit          MAX 70 %
+    Luftdruck             860 hPa ~ 1100 hPa
+
+    Messwerte             0 -999,9 üg/m³
+
+    Schnittstelle seriell UART
+
+    KENNUNG für luftdaten.info PIN1
+
+    EINBAuREGEL
+    Lufteinlaß nach OBEN oder seitlich
+    Lüfter     nach UNTEN oder seitlich
+    Lüftereinlass / auslass frei halten
+
+    Schlauch  ist OPTIONAL - Länge Kürzer 1m -  
+    Schlauchfarbe Schwarz (zur Reflektionsvermeidung da optische Zählung)
+
+    Das Gehäuse und Schlauch sollte möglichst sein LEITEND damit 
+    keine statische Aufladung erfolgt die das Messergebnis beeinflusst
+
+
+    bei überschreiten Feuchte SDS abschalten oder Kompensationsrechnung?  <<<<<
+                                                  ======================
+                                                                            
+==============================================================================================================================
+
+  Kompensationsrechnung  
+
+  aus http://www.opengeiger.de/Feinstaub/FeuchteKompensation.pdf
+
+   ...   Growth-Factor   GF(RH) = a + (b*RH^2) / (1-RH)
+     
+
+    Darin sind a und b empirisch bestimmte Parameter für die Korrektur.
+
+    In dem hier beschriebenen Beispiel wurden die Werte:  
+
+    a=1  und b=0.25 aus den genannten Publikationen übernommen.
+
+    Damit  kann nun der pro  Messung  bestimmte Growth-Factor  
+    zur  Kompensation der einzelnen Laser-Streulicht PM-Werte benutzt werden 
+    um die gravimetrischen PM-Werte zu approximieren:
+
+      Gravimetrischer PM-Schätzwert = Streulicht-PM-Wert / GF(RH)
+
+
+         also  >>>>>>>>>>>>>
+
+
+     kompensierter PM = gelesener PM / (1+(0.25*Feuchte^2) / (1-Feuchte) )
+
+
+     feuchtigkeit z.b. als 0.72 für 72 % dann steigt die Kurve 
+     ab etwa 70 stark an und kompensiert die ungenauigkeit gemaeß Bericht.
+
+      Werte größer 0 ergeben sich ab ca. 14%
+
+      Da sich bei 100% div/0 ergibt, PROBLEM,  
+      muss für größer 99% ein Fehler angezeigt werden 
+      oder ein theoretischer Teiler von z.B. 26 (ähnlich 99%), 
+      da 100 % ohnehin nicht vorkommen sollte
+
+
+      FRAGE: Jedesmal neu berechnen oder 
+             einmal alle Werte berechnen 
+             (86 Werte bei Feuchte von 14% bis 100%) 
+             und im Programm ablegen --- was spart Zeit und Energie?
+	                                           =================          
+                                                                            
+==============================================================================================================================
+==============================================================================================================================
+                                                                            
+==============================================================================================================================
+
+
+    Temperatur, Feuchte, Luftdruck  BME/P280   GYBMEP 
+
+                                                                            
+==============================================================================================================================
+
+
+    BMP180 / BMP280 / BME280 (I2C)
+
+    Anschluesse
+
+    VIN -> Pin 3V3  jetzt an 5V am ADS1115
+    GND -> Pin GND
+    SCL -> Pin D4 (GPIO2)
+    SDA -> Pin D3 (GPIO0)
+
+    Spannung          1,7 - 3,6 V
+    Temperatur        -40...+85 °C
+    Feuchtigkeit      0...100 % rel. humidity
+    Luftdruck         300...1100 hPa
+    
+    Breakoutboard
+    
+    spezifikationen:
+ 
+    Versorgungsspannung: 1,8-5 V DC
+    schnittstelle: I2C (bis zu 3,4 MHz), SPI (bis zu 10 MHz)
+    Reichweite:
+    temperatur:-40 bis + 85 ° C
+    luftfeuchtigkeit: 0-100%
+    druck: 300-1100 hPa
+    auflösung:
+    temperatur: 0,01 ° C
+    luftfeuchtigkeit: 0.008%
+    druck: 0,18 Pa
+    genauigkeit:
+    temperatur:-1 ° C
+    luftfeuchtigkeit: +-3%
+    druck: +-1 Pa
+    I2C adresse
+    SDO NIEDRIGEN: 0x76
+    SDO HOHE: 0x77 
+    
+    
+
+    Schnittstelle I2C
+
+    bme280    (0x76)    https://github.com/adafruit/Adafruit_BME280_Library/blob/master/Adafruit_BME280.h#L133
+                        Mine however is running on 0x76 address (many thanks to I2C scanner)
+		    
+
+    KENNUNG für luftdaten.info PIN11
+
+
+                                                                            
+==============================================================================================================================
+==============================================================================================================================
+                                                                            
+==============================================================================================================================
+
+
+    GPS Modul mit Antenne   Neo-6M GPS  GY-GPS6MV2
+
+                                                                            
+==============================================================================================================================
+
+    Anschlüsse VCC, RX, TX, GND, Antenne
+
+
+    VIN           -> 3,3V         Strom und Masse vom Board 
+                                  (GND und üblicherweise 3,3v, 
+                                  vorher prüfen/Anleitung) 
+
+    TX von Neo    -> Pin D5 (RX)  TX und RX > gekreuzt < verkabelt!
+    RX von Neo    -> Pin D6 (TX)
+    GND
+    Antenna
+
+    Spannung         2,7 -3,6 V 
+    Schnittstelle    UART seriell
+    Kaltstart        27 s
+    Warmstart        27 s
+    Temperatur       -40  -  +85°C
+  
+
+    KENNUNG für luftdaten.info PIN9
+
+
+
+                                                                            
+==============================================================================================================================
+==============================================================================================================================
+
+                                                                            
+==============================================================================================================================
+     STICKOXID KOHLENMONOXID  CJMCU-4541 Sensor  mit MICS-4514 
+==============================================================================================================================
+
+
+    Spannung          5 V
+    
+    
+    Anschluesse 
+
+    VCC,           -> 5V
+    GND,           -> Masse
+    RED,           -> an ADS1115
+    NOX,           -> an ADS1115
+    PRE (HEAT?)    -> D7 anschliessen zum schalten Vorheizung
+    
+
+    Temperatur        -30 -  +85 °C
+    Feuchtigkeit      5 - 95 %
+    Heizleistung      max 82 mW
+
+    RED  CO Konzentration   Messwerte CO  1    - 1000 ppm
+
+    OX   NO2 Konzentration  Messwerte NO2 0.05 -    10 ppm     (50 - 10.000 ppb)  (  94 - 18.800  µg/m³ )
+
+
+    Schnittstelle Analog auf I2C  über ADS1115
+
+    
+
+    KENNUNG für Luftdaten.info  PIN  NO2 CO ( derzeit noch nicht bestimmt)
+
+
+Ausgabe beim ersten Test über ADS115  0,1875 mV
+
+AIN0: 21571   NOX               =  4044 mV
+AIN1: 5928    CO                =  1111 mV  5928=1111mV=0µgCO   //  0-500mV = 1.150.000µgCO   
+//  wenn 1 mV 1 ppm ist  ??  (1000-700mV=300ppm=345000µgCO ???  => CO µg =  (1111-(Zahlenwert*,1875)))*1150   ???
+
+
+
+AIN2: 2914    nicht belegt      =   546 mV
+AIN3: 2919    nicht belegt      =   547 mV
+
+// 5Volt Board = max. Zähler 26666
+
+// CO  RS/R0 ca. 3 bei 0 ppm und 0 bei 1000ppm
+
+// NO2 RS/R0 ca. 0,06 bei 0 ppm und 40 bei 9 ppm
+
+-------------------------------------------------------------------
+
+der bruch aus rs/r0 auf der y achse und ppm auf der x achse.  
+
+bei co 0ppm ca 3 und bei 1000ppm bei 0  -- heisst rss wird niederohmiger mit steigendem co --  
+wenn also die am Widerstand abfallende Spannung ausgegeben wird
+ist bei 0 co die Spannung höher und fällt mit steigendem co 
+-- daheim vermutlich kein co hab ich 1111mV bei 1000ppm wären das wohl 0mV - über welche Funktion ???
+
+Annäherung aus schaubild (nicht linear) CO µg/m³ = ((rs/r0)*11000/((RS/R0)²*1,7/0,81)-1250)/0,9
+
+
+bei no2 ist der Bruch niederohmig und zeigt bei 0ppm 0,06 und bei 9ppmca 40 an 
+- da 1ppm etwa 1880 µg/m³ sind und bereits daheim 4044 mV anzeigen 
+ist nicht mehr viel bis zu max 5Volt -- ein Rätsel
+
+
+Annäherung aus schaubild (linear) NO2 µg/m³= rs/r0 * 298,46
+                                                                            
+==============================================================================================================================
+
+Hab den MiCS-4514 mit der Lupe ausgespäht. 
+SMD Teile haben folgende Beschriftungen 
+510 = 51 Ohm null weitere stellen,
+820 = 82 Ohm,
+223 = Zhenerdiode,
+820 = 82 Ohm, 
+ELh = nicht gefunden 
+
+und auf der anderen Seite 
+
+
+104 = nicht gefunden, 
+101 = Zehnerdiode.
+
+J1Y = nicht gefunden
+
+unbeschriftet 2* = nicht gefunden  - gehen von vcc zu gnd sind vermutlich kondensatoren zum glätten
+
+
+
+Das Datenblatt sagt im Nox Vor/heizzyklus sind 51 Ohm und 82 Ohm in Reihe geschaltet, bei CO ein 82 Ohm - damit wäre die eine Seite abgeschlossen.
+
+Der Rload an den Messpunkten der Sensoren muß je mindestens 820 Ohm haben um den Sensor nicht zu überlasten.
+
+
+ 
+
+Das Schaubild zeigt nur RS/RO an für CO und NO2. 
+
+R0 = an Frischluft ohne Gas
+
+R0 für CO =    0  ppm müsste demnach sein 820 Ohm  
+RS für CO =    1  ppm müsste demnach sein 820 Ohm + 100 kOhm
+RS für CO = 1000  ppm und                 820 Ohm +1500 kOhm
+
+RS/R0 bei CO sinkt Widerstandsquotient mit steigendem Gasanteil laut schaubild
+
+
+R0 für NO2 = 0    ppm                     820 Ohm
+RS für NO2 = 0,05 ppm                     820 ohm + 800 ohm 
+RS für NO2 = 10   ppm                     820 ohm + 20  kohm
+
+RS/R0  bei no2 steigt der Widerstandquotient mit steigendem Gasanteil laut schaubild
+
+
+Entsprechend müsste der Spannungswert an den Messpunkten 
+dem Spannungsabfall an diesem Widerstand entsprechen. 
+
+Nur da fallen doch immer die ganzen 5 Volt an oder wie geht das?
+
+
+Das Verhältnis RS(grade gemessen) / R0 ( gemessen ohne Gasbelastung) 
+ergibt dann die Gaswerte nach einer Formel die aus dem Schaubild erstellt wird. 
+
+Warum ist die Formel nicht fomuliert sondern in einer Grafik versteckt?   
+
+Kann mir da wer schreiben ob ich soweit richtig lieg bzw. wie es richtiger wär?
+
+
+Der Empfindlichkeitsfaktor ist 
+bei CO  = (Rs Frischluft / RS 60 ppm CO)    = 1,2    
+bei NO2 = (Rs 0,25 ppm NO2 / Rs Frischluft) = 2   
+
+- wie ist das zu verstehen wozu ist der Faktor nötig?
+
+
+==============================================================================================================================
+  
+  NO2 umrechnungsablesung aus stickstoffdioxid datenblatt
+  =======================
+
+    1    ppm  =             1,88    mikrog/m3  = 1880 mikrog/m3
+
+    --> Messbereich NO2 4514
+
+    0,05 ppm      =        94     mikrog/m³
+   10    ppm      =    18.800     mikrog/m³
+   
+   
+   
+   
+   Grenzwert NO2 aussen         40 mikrog/m³    <- unter dem Messbereich 4514
+
+   MAK-WERT  NO2     15 Min Mittel        
+   5 ppm bzw 9 mg/m3        = 9400 mikrog/m³    <- im Messbereich 4514
+   
+   Kinderzimmer                 20 mikrog/m³    <- unter dem Messbereich 4514
+   
+   Innenraum                    60 mikrog/m3    <- im Messbereich 4514
+
+   WHO 24h Mittel          max 150 mikrog/m3    <- im Messbereich 4514
+   LÜB NO2 1h Grenzwert        200 mikrog/m³    <- im Messbereich 4514   
+   LÜB NO2 ALARMSCHWELLE       400 mikrog/m³    <- im Messbereich 4514
+   WHO  1h Mittel          max 400 mikrog/m3    <- im Messbereich 4514
+
+
+   
+   
+   
+=============================================================================================================================
+   
+-----------------------------------------------------------------------------------------------------------------   
+aus https://github.com/OpenAirCgn/firmware/blob/master/feather_boards/feather-m0-mics4514/Feather_M0_wifiAP.ino
+
+
+int resolution = 1023; // resolution steps of the ADC
+Board Volt cjmcu = 5 Volt
+
+// sensor config
+float board_volt = 3.3; // input voltage
+float vout_ox = 0; // output voltage
+float vout_co = 0; // output voltage
+float r5 = 3900; // RLOAD_OX in Ohm
+float r7 = 360000; // RLOAD_CO in Ohm
+
+
+// vars for ppm calculation
+float ratio_ox = 0;
+float ppm_ox = 0;
+float ratio_co = 0;
+float ppm_co = 0;
+float r0_ox = 900; // assumed resistance in fresh air... to be calibrated
+float r0_co = 200; // assumed resistance in fresh air... to be calibrated
+float r_ox = 0; // calculated resistance
+float r_co = 0; // calculated resistance
+int a_ox;
+int a_co;
+
+
+
+
+float get_ox_resistance() {
+  a_ox = analogRead(vnox);
+  vout_ox = (board_volt / resolution) * a_ox; // Calculates the Voltage
+  r_ox = ((board_volt - vout_ox) * r5)/vout_ox; // Calculates the resistance
+  return isnan(r_ox)?-1:r_ox;
+}
+
+// also 
+
+
+
+float get_co_resistance() {
+  a_co = analogRead(vred);
+  vout_co = (board_volt / resolution) * a_co; // Calculates the Voltage
+  r_co = ((board_volt - vout_co) * r7)/vout_co; // Calculates the resistance
+return isnan(r_co)?-1:r_co;
+
+
+-----------------------------------------------------------------------------------------------------------------  
+   
+  CO Umrechnungsablesung  aus kohlenmonoxid datenblatt
+  ======================
+ 
+   --> Messbereich
+ 
+             1 ppm    =     1,15 mg/m3      =      1.150 mikrog/m³    <- untere Messgrenze
+          1000 ppm    = 1.150    mg/m3      =  1.150.000 mikrog/m³    <- obere  Messgrenze
+
+
+   MAK-WERT CO  in  15 Min das DOPPELTE Maximal
+   30 ppm  bzw 33 mg/m3                     =     33.000 mikrog/m3    <- im Messbereich 4514  <====== MAK 15 Minuten Mittel
+         -- das DOPPELTE --                 =     66.000 mikrog/m3    <- im Messbereich 4514  <====== MAK 15 Minuten Mittel DOPPELT
+   
+   WHO  8 Std Mittel       10    mg/m3      =     10.000 mikrog/m3    <- im Messbereich 4514
+   LÜB  8 Std Mittel       10    mg/m3      =     10.000 mikrog/m3    <- im Messbereich 4514
+   Gleichgewichtstörung ab 15    mg/m3      =     15.000 mikrog/m3    <- im Messbereich 4514
+   WHO 60 min Mittel       30    mg/m3      =     30.000 mikrog/m3    <- im Messbereich 4514   
+   WHO 30 min Mittel       60    mg/m3      =     60.000 mikrog/m3    <- im Messbereich 4514
+   WHO 15 min Mittel      100    mg/m3      =    100.000 mikrog/m3    <- im Messbereich 4514
+
+
+
+
+
+
+
+
+   
+==============================================================================================================================
+                                                               
+==============================================================================================================================
+
+
+
+
+==============================================================================================================================
+aus Airrohr  entnommen
+==============================================================================================================================
+
+Welche sensoren verwenden welche PIN / GPIO
+
+
+sds011 rxtx                                                  D2/GPIO4   D1/GPIO5
+
+
+OLED SSD1306 i2c             D3/GPIO0         D4/GPIO2
+BMP180/BMP280/BME280  i2c    D3/GPIO0         D4/GPIO2
+ADS1115 i2c                  D3  ??           D4 ??
+
+CJMCU 4514                   Analog über ADS1115
+
+GPS NEO 6M                   seriellrxtx                                               D6                           D5
+
+
+===============================================================================================================================
+
+LCD1602                      D3/GPIO0         D4/GPIO2
+HTU21D                       D3/GPIO0         D4/GPIO2
+  
+PMS7003                                                       D2/GPIO4   D1/GPIO5
+PMS1003 - 6003                                                D2/GPIO4   D1/GPIO5
+
+
+DS18B20                                                                                            D7/GPIO13
+DHT22                                                                                              D7/GPIO13
+PPD42NS                                                                               D6/GPIO12                    D5/GPIO14
+================================================================================================================================
+
+
+
+Luftdaten.info API "Pins" zur KENNUNG SENSORWERT
+
+Bei Aktivierung von mehreren Sensoren, 
+z.B. "gleichzeitig" DHT22 und PPD42NS, benötigt die API zur Zuordnung der Sensorwerte 
+die Angabe eines Pins, an dem der Sensor (virtuell) angeschlossen ist. 
+
+Diese Firmware definiert die Pins für die verschiedenenen Sensoren wie folgt:
+
+
+    SDS011      => Pin  1   seriell RXTX
+    BME280      => Pin 11   I2C     -----------------  warum 11 wenn doch D3 ???
+    GPS(Neo-6M) => Pin  9   I2C seriell RXTX
+
+??  Cjmcu 4541  ???  analog über ADS1115  auf I2C
+
+
+----------------------------------------------------
+
+
+    BMP180      => Pin  3
+    BMP280      => Pin  3
+    PPD42NS     => Pin  5
+    DHT22       => Pin  7
+
+==============================================================================================================================
+==============================================================================================================================*/
+
+
+
