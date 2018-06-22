@@ -1,11 +1,24 @@
 # Mobisens
-Mobile Particle Matter Sensor 
-(SDS011 Feinstaubsensor PM2.5,PM10; BME280 °C,%,hPA; NEO-6M GPS; CJMCU-4541[MiCS-4541 NOx, CO]; SSD1306 OLED)
 
-based on Feinstaubsensor from luftdaten.info hardware and Software plus MiCS-4541 Breakout
+Mobile Sensor 
+- Nova Fitness SDS011 Particle Matter Sensor PM2.5,PM10; 
+- Temperature, Humidity, AirPressure BME280 °C,%,hPA; 
+- GPS Sensor NEO-6M GPS; 
+- NOx CO Breakout-Board CJMCU-4541 [Sensor MiCS-4541 NOx, CO]; 
+- Display SSD1306 OLED
+- USB Power Bank
 
-SDS011 Library with reading in Query Reporting Mode [Factory Default is active reporting mode]
+idea based on Airrohr Feinstaubsensor from luftdaten.info  
+https://github.com/opendata-stuttgart/sensors-software/tree/master/airrohr-firmware
 
 
+SDS011 Library sds011_vers with reading in Query Reporting Mode [Factory Default is active reporting mode]
 
-I am looking for help to interpret the values from the MiCS-4514 on the CJMCU-4541 Breakout Board!
+Interpreting the values from the MiCS-4514 on the CJMCU-4541 Breakout Board 
+is inspired and based on work from
+Shawn Hymel https://github.com/ShawnHymel/MICS-4514_CO_and_NOx_Sensor_Breakout
+Roland Ortner http://myscope.net/auswertung-der-airpi-gas-sensoren/ 
+OpenairCologne https://github.com/OpenAirCgn/
+own Data Collections for calibration
+
+
