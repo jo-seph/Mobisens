@@ -8,17 +8,20 @@ Mobile Sensor
 - Display SSD1306 OLED
 - USB Power Bank
 
-idea based on Airrohr Feinstaubsensor from luftdaten.info  
-https://github.com/opendata-stuttgart/sensors-software/tree/master/airrohr-firmware
+idea based on Airrohr Feinstaubsensor from 
+- https://luftdaten.info/ 
+- https://github.com/opendata-stuttgart/sensors-software/tree/master/airrohr-firmware
 
 
-SDS011 Library sds011_vers with reading in Query Reporting Mode [Factory Default is active reporting mode]
+SDS011 Library [sds011_vers] with reading in Query Reporting Mode [Factory Default is active reporting mode]
 
 Interpreting the values from the MiCS-4514 on the CJMCU-4541 Breakout Board 
 is inspired and based on work from
-Shawn Hymel https://github.com/ShawnHymel/MICS-4514_CO_and_NOx_Sensor_Breakout
-Roland Ortner http://myscope.net/auswertung-der-airpi-gas-sensoren/ 
-OpenairCologne https://github.com/OpenAirCgn/
-own Data Collections for calibration
+- Shawn Hymel https://github.com/ShawnHymel/MICS-4514_CO_and_NOx_Sensor_Breakout
+- Roland Ortner http://myscope.net/auswertung-der-airpi-gas-sensoren/ 
+- OpenairCologne https://github.com/OpenAirCgn/
+- own Data Collections for calibration
 
 
+
+still in working progress
