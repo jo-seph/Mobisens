@@ -1,16 +1,16 @@
 /*************************************************************************************/
-/*  MOBISENS 0.7.6   
+/*  MOBISENS 0.7.6
 
-   mobile sensor apparatus    for particle matter, NO2 CO Gas, 
-   Temperature, AirPressure, Humidity, GPS Position on Display 
-   and in future 
+   mobile sensor apparatus    for particle matter, NO2 CO Gas,
+   Temperature, AirPressure, Humidity, GPS Position on Display
+   and in future
    transmit by WLAN or Lorawan or store on SD-Card if no Connection Available
 
    Hardware:
-   NodeMCU, SDS011, BME280, CJMCU-4541(MiCS-4514),GPS, 
+   NodeMCU, SDS011, BME280, CJMCU-4541(MiCS-4514),GPS,
    [CD-Card-Reader, Lorawan-transmitter]
 
-  
+
    Done:
    OLED: simple Text Interface
    GPS: LAT, LON, Altitude, UTC Date and Time, speed, direction,
@@ -25,10 +25,10 @@
    CJMCU: verify calculation to real data
    send data to luftdaten.info, hackair, Airqn, opensense.net, own server, ...
 
-   
+
 
    all based on code, examples and licenses of arduino/github libraries from
-   
+
    ssd1306 SimpleDemo v Eichhorn,
    BME280.ino,
    Tinygps
@@ -36,19 +36,19 @@
    humidity compensation for SDS011:
      https://github.com/piotrkpaul/esp8266-sds011/blob/master/sds011_nodemcu/sds011_nodemcu.ino
      Opengeiger.de       Kompensation _c Berechnung
-   ADS1115 examples   
+   ADS1115 Adafruit examples
    CJMCU-4541(MiCS-4514)shawn hymel, Roland Ortner myscope.net, Marcel belledin (oklabkoELN)
 
-   This Program is under GPL3 License
-   
-/************************************************************************************************************/
+   This Program is under GPL3 License.  no warranty. use it on your own risk.
+
+  /************************************************************************************************************/
 
 
 
 //---ESP8266 WIFI ----------------------------------------------------------------------------
-/*
-  #include <ESP8266WiFi.h>
-  /**/
+
+#include <ESP8266WiFi.h>
+/**/
 
 //---Portexpander----------------------------------------------------------------------------
 
@@ -65,14 +65,13 @@ SoftwareSerial ss(D5, D6);  //<----------------------------RX D5 <-(TXGPS), TX D
 TinyGPS gps;
 
 //-I2C ----------------------------------------------------------------------------------
-
 // For a connection via I2C using Wire include
 #include <Wire.h>    // Only needed for Arduino 1.6.5 and earlier    i2c 
 
 
 //-SSD1306 OLED -------------------------------------------------------------------------
 
-#include "SSD1306.h"               // alias for `#include "SSD1306Wire.h"`
+#include "SSD1306.h"             // alias for `#include "SSD1306Wire.h"`
 
 // Initialize the OLED display using Wire library
 SSD1306  display(0x3c, D4, D3);  // 0x3c,D4,D3   <--------------------I2c-Address, SDA, SCL
@@ -90,19 +89,20 @@ String TextzeileSDS;    //SDS011
 String TextzeileSDSc;   //SDS011compensiert
 String TextzeileMiCS;   //MiCswerte aus dem ADS   NO2
 String TextzeileMiCSC;  //MiCswerte aus dem ADS  CO
-String TextzeileNOx;  // echte ?? werte
-String TextzeileCO;  // echte ?? werte
+String TextzeileNOx;    // echte ?? werte
+String TextzeileCO;     // echte ?? werte
 String Textzeileppm;
 
 
 //------GPS-------------------------------------------------------------------------
+
 float AltGPS;
 
 void Gehps()
 {
   bool newData = false;
   float flat, flon;
-  unsigned long age, date, t_ime, chars = 0;
+  unsigned long  age, date, t_ime, chars = 0;
   unsigned short sentences = 0, failed = 0;
   int year;
   byte month, day, hour, minute, second, hundredths;
@@ -127,9 +127,9 @@ void Gehps()
 
     AltGPS = (gps.f_altitude());
 
-    TextzeileG =            "" +     String(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 5);
+    TextzeileG =                "" + String(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 5);
     TextzeileG = TextzeileG + "  " + String(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 5);
-    TextzeileG = TextzeileG + "  " +  String(AltGPS, 1); // + "m";
+    TextzeileG = TextzeileG + "  " + String(AltGPS, 1); // + "m";
 
     //   TextzeileGd=String(year)+"/"+String(month)+"/"+String(day)+" "+String(hour)+":"+String(minute)+":"+String(second);
     //   TextzeileGd=TextzeileGd +"  "+String(int(gps.f_speed_kmph()))+"km"; //, TinyGPS::GPS_INVALID_F_SPEED;
@@ -158,7 +158,6 @@ void Gehps()
   /**/
 
 #include <EnvironmentCalculations.h>
-
 #include <BME280I2C.h>
 
 BME280I2C bme;
@@ -176,8 +175,8 @@ BME280I2C bme;
   /**/
 //--------------------------
 
-float humi;  //für kompensationrechnung
-float AltBaro; // Höhe nach Barometer
+float humi;     // für kompensationrechnung
+float AltBaro;  // Höhe nach Barometer
 float taupunkt;
 //unsigned long bme_wartezeit;
 
@@ -187,14 +186,13 @@ void BME280Data()
 
   // if (bme_wartezeit < millis())
   // {
+
   TextzeileT = "";
 
   BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
   BME280::PresUnit presUnit(BME280::PresUnit_Pa);
   BME280::Filter     filter(BME280::Filter_Off);
   BME280::Mode         mode(BME280::Mode_Forced);
-
-
 
   EnvironmentCalculations::AltitudeUnit envAltUnit  =  EnvironmentCalculations::AltitudeUnit_Meters;
   EnvironmentCalculations::TempUnit     envTempUnit =  EnvironmentCalculations::TempUnit_Celsius;
@@ -210,28 +208,25 @@ void BME280Data()
   TextzeileH = "BME alt Baro-GPS " + String(AltBaro - AltGPS) + "m ";
 
   Serial.println(TextzeileH);
-
   Serial.print("BME Höhe ü NN :  "); Serial.print(altitude);  Serial.print("m  Taupunkt: "); Serial.print(dewPoint); Serial.print("°C "); Serial.print("Luftdruck N.N.: ");  Serial.print(seaLevelPres / 100); Serial.println("hPa ");
 
   humi = hum / 100;
-
   if (humi > 0.99)
   {
     humi = 0.99; //für kompensationrechnung
   }
 
   TextzeileT = String(temp, 1) + "°C  " + String(hum, 1) + "%  " + String(seaLevelPres / 100, 1) + "hPa";
-  //   bme_wartezeit = millis() + 2000;
-  Serial.println("BME        " + TextzeileT);
 
+  //   bme_wartezeit = millis() + 2000;
+
+  Serial.println("BME        " + TextzeileT);
   Serial.print  ("BME humi:             ");    Serial.println(humi);
   //Serial.println("BME presunit: " + String(presUnit) + " BME Modus: " + String(mode));
-
 
   //}   // end bme_wartezeit
 }
 //---end bme280 --------------------------------------------------------------------------------
-
 
 
 
@@ -246,16 +241,16 @@ void BME280Data()
 
    RLoad = Schutzwiderstand in Reihe zum Sensor  hier  Nox 22000   Red 47000
 
-   RS / R0 = besser RS / Rs0  =  Verhältnis der Widerstände 
+   RS / R0 = besser RS / Rs0  =  Verhältnis der Widerstände
 
    Abgriffspannung am Messanschluß ist die Spannung die an Rload zu Masse abfällt
 
    Versorgungsspannung minus Abgriffspannung ist Sensorspannung Us
 
-    Portexpander  2/3 gAIN = 0,1875 mV je Zähler  = 0,0001875 Volt je Zähler
+   Portexpander  2/3 gAIN = 0,1875 mV je Zähler  = 0,0001875 Volt je Zähler
 
-    5Volt Board = max. Zähler 26666,67 bei 0,0001875
-    eine andere Spannung verändert die maximale Zählerzahl
+   5Volt Board = max. Zähler 26666,67 bei 0,0001875
+   eine andere Spannung verändert die maximale Zählerzahl
 
 
 
@@ -285,9 +280,9 @@ void BME280Data()
      -  Widerstandsverhältnis steigt mit steigendem NO2 -> RS steigt mit steigendem NO2
 */
 
-/* 
- *  Rückrechnung auf ppm
- *  http://myscope.net/auswertung-der-airpi-gas-sensoren/  Roland Ortner
+/*
+    Rückrechnung auf ppm
+    http://myscope.net/auswertung-der-airpi-gas-sensoren/  Roland Ortner
 
    Gas-Sensor MiCS-2710 (MiCS-4514) für Stickstoffdioxid (NO2) wie  Sensor: MiCS-2710 (NOX)
    Stickstoffdioxid (NO2): 0.05 – 10ppm
@@ -303,18 +298,18 @@ void BME280Data()
    var ppm = Math.pow(10, -1.1859 * (Math.log(Rs/R0) / Math.LN10) + 0.6201);
    CO ppm = 10^-1.1859 * (log(Rs/R0) / ln10) + 0.6201)
 
+
   Umrechnung von ppm in mg/m3
   ---------------------------
-
     Die meisten Messgeräte und Sensoren liefern die Werte in ppm (parts per million),
     die Literatur oder Daten von Wetterdiensten geben hingegen meist die Werte in mg/m3 an
 
-     ßi mg/m3 = (Mi g/mol * PRef mbar) / ( 10 * R J/K mol  * TRef K) * Xi ppm
+    ßi mg/m3 = (Mi g/mol * PRef mbar) / ( 10 * R J/K mol  * TRef K) * Xi ppm
 
     - ßi ist die Massenkonzentration des Gases in mg/m3
     - Mi ist die molare Masse der Komponente in g/mol
-      --  Kohlenstoffmonoxid (CO): 28,01 g/mol
-      --  Stickstoffdioxid (NO2): 46,0055 g/mol
+      --  Kohlenstoffmonoxid (CO): 28,01   g/mol
+      --  Stickstoffdioxid  (NO2): 46,0055 g/mol
     - 10 Einheiten-Umrechnungsfaktor
     - R ist die Universelle Gaskonstante = 8,314472 J/K·mol
     - TRef Bezugstemperatur in K.  (Normtemperatur von 20 °C + 273,15 K = 293,15 K)
@@ -325,29 +320,44 @@ void BME280Data()
     -----------------------
     NO2 in µg/m3 = 1000 * ( 46,0055 *1013 ) / (10 * 8,314472 * 293,15) * NO2inPPM
     NO2 in µg/m3 = 1912,02966843778 * NO2inPPM
-    (                 0.05  NO2 ppm =     95,6014834215  µg/m³   Sensor kann Grenze von 40 µg nicht messen
-                       1    NO2 ppm =   1912,02966843778 µg/m³
-                      10    NO2 ppm =  19120,2966843778  µg/m³
+    (                  0.05  NO2 ppm =     95,6014834215  µg/m³   Sensor kann Grenze von 40 µg nicht messen
+                       1     NO2 ppm =   1912,02966843778 µg/m³
+                      10     NO2 ppm =  19120,2966843778  µg/m³
     )
 
     CO  in µg/m3 = 1000 * ( 28,01   *1013) / (10 * 8,314472 * 293,15) * COinPPM
     CO  in µg/m3 = 1164,12061629462 * COinPPM
 
-    (                  1     CO ppm =    1164,12061629462 µg/m³  Sensor kann Werte von 200 µg (0,2mg) nicht messen
-                    1000     CO ppm = 1164120,61629462    µg/m³
+    (                  1      CO ppm =    1164,12061629462 µg/m³  Sensor kann Werte von 200 µg (0,2mg) nicht messen
+                    1000      CO ppm = 1164120,61629462    µg/m³
     )
 
     - Quellen: http://de.wikipedia.org, http://www.chemie.de/tools/
 
      Nachdem die Sensoren erst einige Tage lang „eingebrannt“ werden müssen,
      können sich die Werte zu Beginn ohne Grund ändern.
+
+    SGX A1A-MiCS_AN2
+    -- SGX Sensortech recommends placing the sensor behind a Teflon membrane
+       in most applications. The Teflon membrane allows diffusion
+       of the gases, while reducing the influence of the air speed.
+
+    SGX SPF-2088
+    -- stabilized Vo value is around 4.5V in these test conditions.
+       To obtain the best resolution it is advised
+       to work around the mid-operating range (i.e. Vcc/2 = 2.5V).
+       To adjust Vo at 2.5V, load resistance has to be reduced.
+       This is done by decreasing the resistance value of the potentiometer.
+       This action has been done at time t0+100 min and is shown in the chart.
+
+
 */
 //   ----------------------------------------------------------------------------
 
 
 /*
 
- ( Spannungsteiler )
+  ( Spannungsteiler )
    U= R * I
    R= U / I
    I= U * R
@@ -355,14 +365,14 @@ void BME280Data()
   Sensorspannung RS = boardspannung-R0_Spannung
 
   Rs_no2= Us / I
-        = (Ug - UR0) / R0 * UR0 
-        = Sensorspannung /  (R0_Spannung  * 22000)  
+        = (Ug - UR0) / R0 * UR0
+        = Sensorspannung /  (R0_Spannung  * 22000)
         = (5 - (adc0 * 0,0001875 mV) / (adc0*0,0001875mV * 22000 OHM)
 
   Rs_co= Us / I
        =  Sensorspannung / (R0_Spannung  * 47000)
-       =  (5 - (adc1 * 0,0001875 mV)) / (adc1*0,0001875mV * 47000 OHM) 
-       
+       =  (5 - (adc1 * 0,0001875 mV)) / (adc1*0,0001875mV * 47000 OHM)
+
   RS/R0 ->  Schaubild ppm  bzw Formel  Regressionsrechnung
 
 
@@ -376,12 +386,12 @@ void BME280Data()
     Rs = Us / I
     RS = Spannungsabfall rs / Strom I
        = (5v-     spannungsabfall R0) / (spannungsabfall Rload / Rload) ]
-       
-    Rs_no2 = ( ( 5000 - (adc0 * 0.0001875) ) / (( adc0 * 0.0001875))  / 22000);   // Rs ( U - (U/I))
-     oder  =    22000 / ( adc0 * 0.0001875 ) * (5 - (adc0 * 0.0001875)); // r1/U1 = R2 /U2 -> R2= r1/u1*U2
 
-  //float Rs_no2 = 22000 / ((adc0 * 0.0001875)) * (5 - (adc0 * 0.0001875)) ;   
-  //float Rs_co  = 47000 / ((adc1 * 0.0001875)) * (5 - (adc1 * 0.0001875)) ;   
+    Rs_no2 = ( ( 5000 - (adc0 * 0.0001875) ) / (( adc0 * 0.0001875))  / 22000);   // Rs ( U - (U/I))
+     oder  =    22000 / ( adc0 * 0.0001875 ) * (5 - (adc0 * 0.0001875));          // r1/U1 = R2 /U2 -> R2= r1/u1*U2
+
+  //float Rs_no2 = 22000 / ((adc0 * 0.0001875)) * (5 - (adc0 * 0.0001875)) ;
+  //float Rs_co  = 47000 / ((adc1 * 0.0001875)) * (5 - (adc1 * 0.0001875)) ;
 
 
   Rload = 22k  / 47 k
@@ -395,21 +405,19 @@ void BME280Data()
     I = Uload / Rload
 
     URs = UBoard-Uload
-    
+
     URs / Rs  = Uload / Rload     oder auch  Rs / URs  = RLoad / ULoad
 
     Rs= Rload / Uload * URs
 
- 
+
 
   Regressionsrechnung nox nach ppm
   =======================
   f(x) = 0.993634072700759 x  - 0.800900894085055  Tabelle nach Ablesung
 
        = POTENZ(10;((0,993634072700759 * LOG10(RS/R0))      - 0,800900894085055)   // excel
-
   var ppm = pow(10,((0.993634072700759 * Math.log10(Rs/R0)) - 0.800900894085055);
-
 
 
   Regressionsrechnung co
@@ -417,19 +425,24 @@ void BME280Data()
   f(x) = -1.17462679264927 x + 0.657906357391024
 
        = POTENZ(10;((-1,17462679264927  * LOG10(RS/R0))      + 0,657906357391024)  // excel
-
-  var ppm = pow(10,((-1.17462679264927 *  Math.log10(Rs/R0)) + 0.657906357391024);
+  var ppm = pow(10,((-1.17462679264927  * Math.log10(Rs/R0)) + 0.657906357391024);
 
 */
 /*
 
-  //double nmue = 1912.02966843778 * (pow(10,  0.9682 * (log10(RsR0_no2) / log(10)) - 0.8108));  // NoX in µg/m³
-  //double cmue = 1.16412061629462 * 1000 * (pow(10, -1.1859 * (log10(RsR0_co) / log(10)) - 0.6201));  // co in µg/m³
+  //double nmue = 1912.02966843778 *        (pow(10,  0.9682 * (log10(RsR0_no2) / log(10)) - 0.8108));  // NoX in µg/m³
+  //double cmue = 1.16412061629462 * 1000 * (pow(10, -1.1859 * (log10(RsR0_co)  / log(10)) + 0.6201));  // co in µg/m³
 
 
   // versuch eigener formel aus schaubildablesung_3 basis trendlinienformel
-  // double nmue = 1912.02966843778 * ( (RsR0_no2) + 0.115521875684421 ) / 6.5367241454406 ;
-  //float cmue = ( 1.16412061629462 * 1000 * (pow(2.7182818284590452,    ( (RsR0_co - 3.97170356552395) / -0.792212787080319)    ));
+
+  // NoX in µg/m³   [ umr auf µg   *  ppm ]
+  float noxppm = (pow(10, 0.993634072700759 * (log10(RsR0_no2) ) - 0.800900894085055));
+  float nmue   = 1912.02966843778  * noxppm;
+
+  // co  in µg/m³   [ umr auf µg   *  ppm ]
+  float coppm  = (pow(10, -1.17462679264927 * (log10(RsR0_co)  ) + 0.657906357391024));
+  float cmue   = 1.16412061629462 * 1000 * coppm ;
 
 */
 
@@ -440,8 +453,7 @@ void BME280Data()
 // #include <math.h>      // für LN Berechnung no2 co  brauchts doch nicht
 
 unsigned long  preheat;
-int Vorheizzeit = 30000;
-int beheizt = 0, z = 0, y = 0;
+int Vorheizzeit = 30000, beheizt = 0, z = 0, y = 0;
 String PH = "";
 
 /*----------- cjmcu -----------------------*/
@@ -450,7 +462,7 @@ void CJMCU()
 {
 
   int16_t adc0, adc1, adc2, adc3;
-  float Noxadc0 = 0, Coadc1 = 0;
+  float   Noxadc0 = 0, Coadc1 = 0;
 
   if (beheizt < 1 )
   {
@@ -475,17 +487,16 @@ void CJMCU()
     }
   }
 
-  adc0 = ads.readADC_SingleEnded(0);
-  adc1 = ads.readADC_SingleEnded(1);
-  adc2 = ads.readADC_SingleEnded(2);
-  adc3 = ads.readADC_SingleEnded(3);
+  adc0 = ads.readADC_SingleEnded(0);  //NO2
+  adc1 = ads.readADC_SingleEnded(1);  //CO
+  adc2 = ads.readADC_SingleEnded(2);  //Boardspannung zum prüfen der Berechnung ??
+  adc3 = ads.readADC_SingleEnded(3);  //MQ-135 ??
 
   Serial.print("adc0 "); Serial.print(adc0); Serial.print("  adc1 "); Serial.println(adc1);
   Serial.print("adc2 "); Serial.print(adc2); Serial.print("  adc3 "); Serial.println(adc3);
 
   TextzeileMiCS = "";
   TextzeileMiCSC = "";
-
 
   // Widerstand RS  R=U/I oder  Rs= Rload / Uload * URs
   // U=R*I    I=U/R    R=U/I
@@ -494,7 +505,7 @@ void CJMCU()
 
   int Rload_no2 = 22000;
   int Rload_co  = 47000;
-  int U_Board = 5.0;
+  int U_Board   = 5.0;                        // oder adc2*0.0001875  // Boardspannung
 
   float U_Rload_no2 = (adc0 * 0.0001875);
   float U_Rload_co  = (adc1 * 0.0001875);
@@ -502,17 +513,16 @@ void CJMCU()
   float I_no2 = (U_Rload_no2 / Rload_no2);
   float I_co  = (U_Rload_co  / Rload_co );
 
-  float Rs_no2 = (U_Board - U_Rload_no2)  / I_no2;
-  float Rs_co  = (U_Board - U_Rload_co )  / I_co;
+  float Rs_no2 = (U_Board - U_Rload_no2) / I_no2;
+  float Rs_co  = (U_Board - U_Rload_co ) / I_co ;
 
 
   // Widerstandverhältnis RsR0_  =  Rs/R0 = Rs_  / R0
 
-  float RsR0_no2 = Rs_no2 / 386158;  //750000;    //    Versuch R0 100000   r0    800 -   20000  mitte =  10400
-  float RsR0_co  = Rs_co  / 9472;    //30;   //    Versuch R0 100000   r0 100000 - 1500000  mitte = 800000
+  float RsR0_no2 = Rs_no2 / 386158;            // 386158 aus Stachusmessung
+  float RsR0_co  = Rs_co  / 9472;              //   9472 aus Stachusmessung
 
   //Textzeileppm = String(int(Rs_no2)) + "   " + String(int(Rs_co));
-
 
   Serial.println(" ");
   Serial.print("Rs_no2 Ohm ");
@@ -528,7 +538,6 @@ void CJMCU()
   Serial.println(RsR0_co);
   Serial.println(" ");
 
-
   // hier formel für Kurve  aus myscope mit daten aus eigener Schaubild_3 ablesung
 
   // NoX in µg/m³   [ umr auf µg   *  ppm ]
@@ -539,9 +548,7 @@ void CJMCU()
   float coppm  = (pow(10, -1.17462679264927 * (log10(RsR0_co)  ) + 0.657906357391024));
   float cmue   = 1.16412061629462 * 1000 * coppm ;
 
-
   Textzeileppm = "nppm " + String(noxppm, 3) + " cppm " + String(coppm, 3);
-
 
   Serial.println(" ");
   Serial.print("noxppm ");
@@ -566,21 +573,15 @@ void CJMCU()
   Serial.print("CJMCU  "); Serial.print(TextzeileNOx); Serial.print(" "); Serial.println(TextzeileCO);
   Serial.println(" ");
 
-
-  Noxadc0 =  26666 - adc0;
-  // Noxadc0 = 1912.02966843778 * (pow(10, 0.9682 * (log10(RsR0_no2) / log(10)) - 0.8108));  // NoX in µg/m³
-
+  Noxadc0 =  26666 - adc0;    // adc2 - adc0;
 
   //  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-  Coadc1 = 26666 - adc1;
-
-  // Coadc1 = 1.16412061629462 * (pow(10, -1.1859 * (log10(RsR0_co) / log(10)) - 0.6201));  // co in mg/m³
-
+  Coadc1  =  26666 - adc1;    // adc2 - adc1;
 
   // TextzeileMiCS=String("N "+String(Noxadc0)+"z C "+String(Coadc1)+"z");
-  TextzeileMiCS = String(PH + " " + String(int(Noxadc0)) + "");
-  TextzeileMiCSC = String("C  " + String(int(Coadc1)) + "");
+  TextzeileMiCS  = String(PH + " " + String(int(Noxadc0)) + "");
+  TextzeileMiCSC = String("C "     + String(int(Coadc1 )) + "");
 
   Serial.println(" ");
   Serial.println("CJMCU      Nox z    " + TextzeileMiCS);
@@ -592,129 +593,116 @@ void CJMCU()
 
 
 
-
-
-//--SDS011  Anfang -------------------------------------------------------------------
+//--SDS011  Anfang ------------------------------------------------------------------------
 
 // Soll nur aufwachen, lesen, schlafen, 145 Sekunden warten
-//---------------------------------------------------------------------------------------
 
 #include <SDS011_vers.h>
-
 SDS011_vers my_sdsv;
 
-float p10 = 0.0, p25 = 0.0;
-int sds_error;
-int zuerst = 0;
+float p10 = 0.0,   p25 = 0.0;
+int sds_error,  zuerst = 0,   Pause = 145000;              // Pause sync zu airrohr 145000
 unsigned long sds_wait = 0;
-int Pause = 145000;              // sync zu airrohr 145000
 
-void Essds()   //SDS011 lesen
+void Essds()
 {
   if ((millis() >= sds_wait) or (zuerst < 1))
   {
-    //TextzeileSDS  = "";
-    //TextzeileSDSc = "";
-
-    // my_sdsv.wakeup();
-    // delay(100);
-
-    /*
-        int _error = my_sdsv.SetWork();
-        Serial.print("SDS Work _error:               "); Serial.println(_error);
-
-
-        delay(3000);
-
-        sds_error = my_sdsv.read_q(&p25, &p10);
-        Serial.print("SDS read_q sds_error:          "); Serial.println(sds_error);
-
-        delay(3000);
-
-        _error = my_sdsv.SetSleep();
-        Serial.print("SDS sleep _error:              "); Serial.println(_error);
-        /**/
-
-    my_sdsv.sleep();
-    Serial.print("sleep ");
-    delay(200);
-
-    //________________
-
-    int  queryset = 1; // 1 set Mode
-    int  sleepwork = 1; // 0 sleep
-    int  DevID1c = 0xFF;
-    int  DevID2c = 0xFF;
-    int  querysetr = 0;
-    int  sleepworkr = 0;
-    int  DevID1r = 0;
-    int  DevID2r = 0;
-
-    int error = my_sdsv.SetSleepAndWork(&queryset, &sleepwork, &DevID1c, &DevID2c, &querysetr, &sleepworkr, &DevID1r, &DevID2r);
-    //delay(1000);
-    Serial.print("SDS Work _error:                "); Serial.println(error);
-    //error = 7;
-    /**/ //________________
-
-
-    //________________
-    DevID1c = 0xFF;
-    DevID2c = 0xFF;
-    DevID1r = 0;
-    DevID2r = 0;
+    int _error = my_sdsv.SetWork();
+    Serial.print("SDS Work _error:               "); Serial.println(_error);
 
     int sds_round = 0;
-    do {
-      sds_error = my_sdsv.QueryDataCommand(&DevID1c, &DevID2c, &p25, &p10, &DevID1r, &DevID2r);
 
-      Serial.print("SDS_error:                      "); Serial.println(sds_error);
-      Serial.print("SDS_Runde:                      "); Serial.println(sds_round);
+    do {
+      sds_error = my_sdsv.read_q(&p25, &p10);
+      Serial.print("SDS read_q sds_error:          "); Serial.println(sds_error);
       sds_round++;
-      delay(3000);
+      if ( sds_error > 0) {
+        delay(3000);
+      }
     }
     while ((sds_error not_eq 0) and (sds_round < 5));
 
-    Serial.print("SDS                        2,5: ");
-    Serial.print(p25, 1); Serial.print("   10: "); Serial.println(p10, 1);
-
-    Serial.print(DevID1r, HEX); Serial.print("   "); Serial.println(DevID2r, HEX);
-    delay(900);
+    _error = my_sdsv.SetSleep();
+    Serial.print("SDS sleep _error:              "); Serial.println(_error);
     /**/
 
 
+    /*
+        my_sdsv.sleep();
+        Serial.print("sleep ");
+        delay(200);
 
-    //________________
-    queryset = 1; // 1 set Mode
-    sleepwork = 0; // 0 sleep
-    DevID1c = 0xFF;
-    DevID2c = 0xFF;
-    querysetr = 0;
-    sleepworkr = 0;
-    DevID1r = 0;
-    DevID2r = 0;
+        //________________
 
-    error = my_sdsv.SetSleepAndWork(&queryset, &sleepwork, &DevID1c, &DevID2c, &querysetr, &sleepworkr, &DevID1r, &DevID2r);
-    Serial.print("SDS sleep _error:               "); Serial.println(error);
-    Serial.println();
-    /**/ //________________
+        int  queryset = 1; // 1 set Mode
+        int  sleepwork = 1; // 0 sleep
+        int  DevID1c = 0xFF;
+        int  DevID2c = 0xFF;
+        int  querysetr = 0;
+        int  sleepworkr = 0;
+        int  DevID1r = 0;
+        int  DevID2r = 0;
+
+        int error = my_sdsv.SetSleepAndWork(&queryset, &sleepwork, &DevID1c, &DevID2c, &querysetr, &sleepworkr, &DevID1r, &DevID2r);
+        //delay(1000);
+        Serial.print("SDS Work _error:                "); Serial.println(error);
+        //error = 7;
+        /**/ //________________
+
+    /*
+        //________________
+        DevID1c = 0xFF;
+        DevID2c = 0xFF;
+        DevID1r = 0;
+        DevID2r = 0;
+
+        int sds_round = 0;
+        do {
+          sds_error = my_sdsv.QueryDataCommand(&DevID1c, &DevID2c, &p25, &p10, &DevID1r, &DevID2r);
+
+          Serial.print("SDS_error:                      "); Serial.println(sds_error);
+          Serial.print("SDS_Runde:                      "); Serial.println(sds_round);
+          sds_round++;
+          delay(3000);
+        }
+        while ((sds_error not_eq 0) and (sds_round < 5));
+
+        Serial.print("SDS                        2,5: ");
+        Serial.print(p25, 1); Serial.print("   10: "); Serial.println(p10, 1);
+
+        Serial.print(DevID1r, HEX); Serial.print("   "); Serial.println(DevID2r, HEX);
+        delay(900);
+        /**/
 
 
+    /*
+        //________________
+        queryset = 1; // 1 set Mode
+        sleepwork = 0; // 0 sleep
+        DevID1c = 0xFF;
+        DevID2c = 0xFF;
+        querysetr = 0;
+        sleepworkr = 0;
+        DevID1r = 0;
+        DevID2r = 0;
 
+        error = my_sdsv.SetSleepAndWork(&queryset, &sleepwork, &DevID1c, &DevID2c, &querysetr, &sleepworkr, &DevID1r, &DevID2r);
+        Serial.print("SDS sleep _error:               "); Serial.println(error);
+        Serial.println();
+        /**/ //________________
 
 
     if (sds_error == 0)
     {
       TextzeileSDS = "2,5: " + String(p25, 0) + "   10: " + String(p10, 0) + "";
-
       Serial.println();
       //      Serial.print  ("SDS DeviceID: "); Serial.print(DevID1r); Serial.print(" "); Serial.println(DevID2r);
       Serial.println();
       Serial.println("SDS           " + TextzeileSDS);
-
-
       Essds_C();   // Feuchtekompensation aus gelesenen Werten
-
     }
+
     zuerst = 1;
     sds_wait = millis() + Pause;        // Zeit hochsetzen
 
@@ -724,23 +712,17 @@ void Essds()   //SDS011 lesen
     // my_sdsv.sleep();
     //Serial.print(" else sleep ");
   }
-
 }
-
 //---ende sds--------------------------------------------------------------------------------
-
-
 
 
 
 //---beginn Kompensationsrechnung für sds-------------------------------------------------------
 
 /*
-
   aus http://www.opengeiger.de/Feinstaub/FeuchteKompensation.pdf
 
   ...   Growth-Factor   GF(RH) = a + (b*RH^2) / (1-RH)
-
 
   Darin sind a und b empirisch bestimmte Parameter für die Korrektur.
   In dem hier beschriebenen Beispiel wurden die Werte:
@@ -749,15 +731,11 @@ void Essds()   //SDS011 lesen
   zur  Kompensation der einzelnen Laser-Streulicht PM-Werte benutzt werden
   um die gravimetrischen PM-Werte zu approximieren:
 
-    Gravimetrischer PM-Schätzwert = Streulicht-PM-Wert / GF(RH)
-       also  >>>>>>>>>>>>>
+  Gravimetrischer PM-Schätzwert = Streulicht-PM-Wert / GF(RH)
+  also kompensierter PM = gelesener PM / (1+(0.25*Feuchte^2) / (1-Feuchte) )
 
-   kompensierter PM = gelesener PM / (1+(0.25*Feuchte^2) / (1-Feuchte) )
-
-*/
+  /**/
 //---ende   Kompensationsrechnung für sds-------------------------------------------------------
-
-
 
 
 
@@ -768,36 +746,30 @@ void Essds_C()
 {
 
   // humi z.B. 0.49 für 49% Feuchte
-  // sds011 kompensieren nach opengeiger.de  dämpft stärker als piotrkpaul (hackair)
-  p25c = (p25 / (1 + (0.25 * humi * humi) / (1 - humi)));
-  p10c = (p10 / (1 + (0.25 * humi * humi) / (1 - humi)));
-  /**/
+  /*
+    // sds011 Kompensierung nach opengeiger.de  dämpft stärker als piotrkpaul (hackair)
+    p25c = (p25 / (1 + (0.25 * humi * humi) / (1 - humi)));
+    p10c = (p10 / (1 + (0.25 * humi * humi) / (1 - humi)));
+    /**/
 
   /*  sds011 kompensieren nach piotrkpaul hackair  nicht so stark wie opengeiger
       https://github.com/piotrkpaul/esp8266-sds011/blob/master/sds011_nodemcu/sds011_nodemcu.ino
+    /**/
 
-      {
-       p25c=(p25/(1+(0.48756*pow(humi,8.60068))));  //kompensation piotrkpaul aus hackair
-       p10c=(p10/(1+(0.81559*pow(humi,5.83411))));
-      /**/
+  p25c = (p25 / (1 + (0.48756 * pow(humi, 8.60068)))); //kompensation piotrkpaul aus hackair
+  p10c = (p10 / (1 + (0.81559 * pow(humi, 5.83411))));
+  /**/
 
   TextzeileSDSc = "25: " + String(p25c, 1) + " 10: " + String(p10c, 1) + "";
   Serial.println("SDSc       " + TextzeileSDSc);
-
 }
 //----Ende SDS_C---------------------------------------------------------------
 
 
 
-
-
-
 //-----------------------------------------------------------------------------
-
-
 void Texte()
 {
-
   /*
     123456789012345678901234!567
     !-----------------------!---!
@@ -819,7 +791,7 @@ void Texte()
     48,214  11,557  528m
     26°C 35%  941hP
     - - - -- - - -- -
-    /*  */
+    /**/
 
   // Display 128*64 Pixel 0-127 0-63 /  6 Zeilen ( 1*16hoch Orange  +  4*10hoch=56 Rest 8)
   // oder  4 Zeile a 16 hoch =64
@@ -830,17 +802,13 @@ void Texte()
 
   // T emperatur, G ps, Gps_d atum, SDS, SDSc, MiCS
 
-
-
   String sek = String(int((sds_wait - millis()) / 1000)) + "";
   Serial.println("              Sekunden bis SDS: " + sek);
   Serial.println();
 
   /**/
 
-
   display.setFont(ArialMT_Plain_10);
-
   display.setTextAlignment(TEXT_ALIGN_RIGHT);
 
   display.drawString(128, 10, TextzeileG);      // Blau gps Lat Lon höhe
@@ -848,31 +816,32 @@ void Texte()
 
 
   display.setTextAlignment(TEXT_ALIGN_CENTER);
+
   display.drawString(64, 20, sek);
   //display.drawString(64, 20, Textzeileppm);
   //display.drawString(64, 32, TextzeileNOxCO);   // no2 co rs/r0
 
   display.setTextAlignment(TEXT_ALIGN_LEFT);
+
   display.drawString(00, 00, TextzeileT);      // Blau C % hPa Temp Feuchte Luftdruck
   // display.drawString(00, 12, TextzeileSDS); // Blau Pm25  PM10
   // display.drawString(00, 10, TextzeileG);      // Blau gps Lat Lon höhe
   display.drawString(00, 20, Textzeilehm);     // GPS UTC hh:min
 
   display.setFont(ArialMT_Plain_16);
-  display.drawString(00, 32, TextzeileSDS);   // Blau PM25c PM10c
+
+  display.drawString(00, 32, TextzeileSDS);    // Blau PM25c PM10c
 
   //display.drawString(00, 32, Textzeileppm);
-  display.drawString(00, 48, TextzeileNOx);   // no2  Werte
+  display.drawString(00, 48, TextzeileNOx);    // no2  Werte
   //display.drawString(00, 48, TextzeileMiCS);   // Orange No2
   //display.drawString(64, 48, TextzeileMiCSC);  // Orange CO
 
   display.setTextAlignment(TEXT_ALIGN_RIGHT);
-  display.drawString(128, 48, TextzeileCO);   //  co Werte
+
+  display.drawString(128, 48, TextzeileCO);    //  co Werte
 }
 //--End Texte -------------------------------------------------------------
-
-
-
 
 
 
@@ -900,16 +869,13 @@ void setup() {
 
   /*--------------------------------------------------------*/
 
-  /*
-      pinMode(LED_BUILTIN, OUTPUT);       // interne LED als Output definieren
-      digitalWrite(LED_BUILTIN, HIGH);    // Ausschalten  /**/
-
+  pinMode(LED_BUILTIN, OUTPUT);       // interne LED als Output definieren
+  digitalWrite(LED_BUILTIN, HIGH);    // Ausschalten  /**/
   /*--------------------------------------------------------*/
-  /*
-    WiFi.disconnect();
-    WiFi.mode(WIFI_OFF);                // WLAN ausschalten  /**/
-  //--------------------------------------------
 
+  WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);                // WLAN ausschalten  /**/
+  //--------------------------------------------
 
   // The ADC input range (or gain) can be changed via the following
   // functions, but be careful never to exceed VDD +0.3V max, or to
@@ -936,60 +902,57 @@ void setup() {
 
   my_sdsv.begin(D1, D2);   //  my_sds.begin(RX-ESP(TX-SDS),TX-ESP(RX-SDS));
 
+
+  int _error = my_sdsv.SetQueryReportingMode();
+  Serial.print(" SetQueryReportingMode _error:  "); Serial.println(_error);
+  _error = my_sdsv.SetContinuousMode();
+  Serial.print(" SetContinuousMode _error:      "); Serial.println(_error);
+  _error = my_sdsv.SetSleep();
+  Serial.print(" SDS sleep _error:              "); Serial.println(_error);
+  /**/
+
+
   /*
-    int _error = my_sdsv.SetQueryReportingMode();
-    Serial.print(" SetQueryReportingMode _error:  "); Serial.println(_error);
-    delay(3000);
-    _error = my_sdsv.SetContinuousMode();
-    Serial.print(" SetContinuousMode _error:      "); Serial.println(_error);
-    delay(3000);
-    _error = my_sdsv.SetSleep();
-    Serial.print(" SDS sleep _error:              "); Serial.println(_error);
-    delay(3000);
+    int queryset = 1;    // 1 set Mode
+    int activequery = 1;  // 0 activereport Mode (DEFAULT)  1 querymode
+    int DevID1c = 0xFF;  // FF= all
+    int DevID2c = 0xFF;  // FF= all
+
+    int querysetr ;
+    int activequeryr;
+    int DevID1r;
+    int DevID2r;
+
+    int  error = my_sdsv.SetDataReportingMode(&queryset, &activequery, &DevID1c, &DevID2c, &querysetr, &activequeryr, &DevID1r, &DevID2r);
+    delay(500);
     /**/
 
+  /*
+    queryset = 1;    // 1 set Mode
+    int contperiod = 0; // 0 Continuous Mode (DEFAULT), Working Period 1-30 min (incl 30 sec Measurement)
+    DevID1c = 0xFF;  // FF= all
+    DevID2c = 0xFF;  // FF= all
+    querysetr = 3;
+    int contperiodr = 3;
+    DevID1r = 3;
+    DevID2r = 3;
 
+    error = my_sdsv.SetWorkingPeriod(&queryset, &contperiod, &DevID1c, &DevID2c, &querysetr, &contperiodr, &DevID1r, &DevID2r);
+    delay(500);
+    /**/
 
-  int queryset = 1;    // 1 set Mode
-  int activequery = 1;  // 0 activereport Mode (DEFAULT)  1 querymode
-  int DevID1c = 0xFF;  // FF= all
-  int DevID2c = 0xFF;  // FF= all
+  /*
+    queryset = 1; // 1 set Mode
+    int  sleepwork = 0; // 0 sleep
+    DevID1c = 0xFF;
+    DevID2c = 0xFF;
+    querysetr = 0;
+    int  sleepworkr = 0;
+    DevID1r = 0;
+    DevID2r = 0;
 
-  int querysetr ;
-  int activequeryr;
-  int DevID1r;
-  int DevID2r;
-
-  int  error = my_sdsv.SetDataReportingMode(&queryset, &activequery, &DevID1c, &DevID2c, &querysetr, &activequeryr, &DevID1r, &DevID2r);
-  delay(500);
-  /**/
-
-
-  queryset = 1;    // 1 set Mode
-  int contperiod = 0; // 0 Continuous Mode (DEFAULT), Working Period 1-30 min (incl 30 sec Measurement)
-  DevID1c = 0xFF;  // FF= all
-  DevID2c = 0xFF;  // FF= all
-  querysetr = 3;
-  int contperiodr = 3;
-  DevID1r = 3;
-  DevID2r = 3;
-
-  error = my_sdsv.SetWorkingPeriod(&queryset, &contperiod, &DevID1c, &DevID2c, &querysetr, &contperiodr, &DevID1r, &DevID2r);
-  delay(500);
-  /**/
-
-
-  queryset = 1; // 1 set Mode
-  int  sleepwork = 0; // 0 sleep
-  DevID1c = 0xFF;
-  DevID2c = 0xFF;
-  querysetr = 0;
-  int  sleepworkr = 0;
-  DevID1r = 0;
-  DevID2r = 0;
-
-  error = my_sdsv.SetSleepAndWork(&queryset, &sleepwork, &DevID1c, &DevID2c, &querysetr, &sleepworkr, &DevID1r, &DevID2r);
-  /**/
+    error = my_sdsv.SetSleepAndWork(&queryset, &sleepwork, &DevID1c, &DevID2c, &querysetr, &sleepworkr, &DevID1r, &DevID2r);
+    /**/
   /*--------------------------------------------------------*/
 
   yield();
