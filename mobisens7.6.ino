@@ -34,7 +34,7 @@
    Tinygps
    SDS011  v Rajko Zschiegner, aus Beta und library
    humidity compensation for SDS011:
-     https://github.com/piotrkpaul/esp8266-sds011/blob/master/sds011_nodemcu/sds011_nodemcu.ino
+     https://github.com/piotrkpaul/esp8266-sds011/blob/masteur/sds011_nodemcu/sds011_nodemcu.ino
      Opengeiger.de       Kompensation _c Berechnung
    ADS1115 Adafruit examples
    CJMCU-4541(MiCS-4514)shawn hymel, Roland Ortner myscope.net, Marcel belledin (oklabkoELN)
@@ -608,23 +608,44 @@ void Essds()
 {
   if ((millis() >= sds_wait) or (zuerst < 1))
   {
-    int _error = my_sdsv.SetWork();
-    Serial.print("SDS Work _error:               "); Serial.println(_error);
+    int sds_round = 0, _error = 0;
+    do {
+      _error = my_sdsv.SetWork();
+      Serial.print("SDS Work _error:               "); Serial.println(_error);
+      sds_round++;
+      Serial.print("SDS wake round:                "); Serial.println(sds_round);
+      if ( _error > 0 ) {
+        delay(100);
+      }
+    }
+    while ((_error not_eq 0) and (sds_round < 5));
 
-    int sds_round = 0;
 
+    sds_round = 0;
     do {
       sds_error = my_sdsv.read_q(&p25, &p10);
       Serial.print("SDS read_q sds_error:          "); Serial.println(sds_error);
       sds_round++;
+      Serial.print("SDS round:                     "); Serial.println(sds_round);
       if ( sds_error > 0) {
         delay(3000);
       }
     }
     while ((sds_error not_eq 0) and (sds_round < 5));
 
-    _error = my_sdsv.SetSleep();
-    Serial.print("SDS sleep _error:              "); Serial.println(_error);
+
+    sds_round = 0;
+    do {
+      _error = my_sdsv.SetSleep();
+      Serial.print("SDS sleep _error:              "); Serial.println(_error);
+      sds_round++;
+      Serial.print("SDS sleep round:               "); Serial.println(sds_round);
+      if ( sds_error > 0) {
+        delay(100);
+      }
+    }
+    while ((_error not_eq 0) and (sds_round < 5));
+
     /**/
 
 
@@ -904,11 +925,11 @@ void setup() {
 
 
   int _error = my_sdsv.SetQueryReportingMode();
-  Serial.print(" SetQueryReportingMode _error:  "); Serial.println(_error);
+  Serial.print(" Setup SetQueryReportingMode _error:  "); Serial.println(_error);
   _error = my_sdsv.SetContinuousMode();
-  Serial.print(" SetContinuousMode _error:      "); Serial.println(_error);
+  Serial.print(" Setup SetContinuousMode _error:      "); Serial.println(_error);
   _error = my_sdsv.SetSleep();
-  Serial.print(" SDS sleep _error:              "); Serial.println(_error);
+  Serial.print(" Setup SDS sleep _error:              "); Serial.println(_error);
   /**/
 
 
@@ -984,3 +1005,4 @@ void loop()
 }
 //---LOOP ENDE------------------------------------------------------------------
 //------------------------------------------------------------------------------
+
