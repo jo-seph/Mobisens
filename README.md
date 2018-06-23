@@ -1,6 +1,6 @@
 # Mobile sensor
 
-Mobile Sensor for mobile sensor for particle matter and NOx/CO Gas 
+Mobile Sensor for particle matter and NOx/CO Gas 
 is meant as an open project for everyone
 
 Hardware:
