@@ -1,16 +1,16 @@
 /*
 ==============================================================================================================================
                               
-  M O B I S E N S   16                                          
+  M O B I S E N S   16.01                                          
                                                                             
-  Feinstaubsensormobil mit SDS011, BME280(Temperatur, Feuchte, Luftdruck), GPS, OLED, ADS1115 PortExpander für CO, NO2                         
+  mobiler Feinstaubsensor mit SDS011, BME280(Temperatur, Feuchte, Luftdruck), GPS, OLED, ADS1115 PortExpander für CO, NO2                         
                                                                             
-           - Anschlußübersicht der Sensoren an NodeMCU -                                     1. juni 18       
+           - Anschlußübersicht der Sensoren an NodeMCU -                                     23. juni 18       
 	   
 	   
-	   BME280 weit weg von Hitzequellen MiCS-4514 und ESP8266 positionieren
-	   
-	   
+	-   BME280 weit weg von den Hitzequellen MiCS-4514 und ESP8266 positionieren
+	-   einhausen des MiCS-4514 inkl Teflonmembran   
+	-   Mindestlaufzeit MiCs-4514 (Nox) zur Stabilisierung ca. 100 Minuten   
 ==============================================================================================================================
 
          
