@@ -33,12 +33,13 @@ is inspired and based on work from
 
 
 points of development
--lorawan module
--SD-Card
--
+- lorawan module
+- SD-Card
+- save and send data to (https://luftdaten.info, https://opensensemap.org, https://aqicn.org/, http://www.hackair.eu/, ...)
 
 
 still in working progress
 
 
 
+If you find some points of improvement, please let me know
