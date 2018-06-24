@@ -92,8 +92,8 @@ String TextzeileMiCSC;  //MiCswerte aus dem ADS  CO
 String TextzeileNOx;    // echte ?? werte
 String TextzeileCO;     // echte ?? werte
 String Textzeileppm;
-
-
+String sek;             // Errorcode lesen und sek
+String s_err;
 //------GPS-------------------------------------------------------------------------
 
 float AltGPS;
@@ -633,6 +633,7 @@ void Essds()
     }
     while ((sds_error not_eq 0) and (sds_round < 5));
 
+    s_err = sds_error;
 
     sds_round = 0;
     do {
@@ -823,7 +824,7 @@ void Texte()
 
   // T emperatur, G ps, Gps_d atum, SDS, SDSc, MiCS
 
-  String sek = String(int((sds_wait - millis()) / 1000)) + "";
+  sek = s_err + " " + String(int((sds_wait - millis()) / 1000)) + "";
   Serial.println("              Sekunden bis SDS: " + sek);
   Serial.println();
 
