@@ -5,7 +5,7 @@
                                                                             
   mobiler Feinstaubsensor mit SDS011, BME280(Temperatur, Feuchte, Luftdruck), GPS, OLED, ADS1115 PortExpander für CO, NO2                         
                                                                             
-           - Anschlußübersicht der Sensoren an NodeMCU -                                     23. juni 18       
+           - Anschlußübersicht der Sensoren an NodeMCU -                                     25. juni 18       
 	   
 	   
 	-   BME280 weit weg von den Hitzequellen MiCS-4514 und ESP8266 positionieren
@@ -60,30 +60,39 @@
   
   
       Kapazitätsrechnung: 6000 mAh * 80%   =   4800 / 600   =   8 h bei Dauerbetrieb => mit 90 s Pause ca 24 h  bis 20% Restladung Powerbank
+    
+    
+      Ergebnis Kapazitätstest  bis Ausfall:
+      6000 mAh / 15 h Laufzeit = 400 mA  = 0,4 A * 5 V = 2 Watt  bei sds query mode ( 7 sek Messung ), 30 Preheat, Dauerbetrieb
+      
+      Rückrechnung auf 20% Restladung: 6000 mAh * 80%   =   4800 mAh / 400 mA Verbrauch  =  12 h Betriebszeit
+    
+    
+      
       
       
 Rechts
       D8 NodeMCU               noch ungenutzt	
-      RX NodeMCU  (usb)        noch ungenutzt
-      TX NodeMCU  (usb)        noch ungenutzt
+      RX NodeMCU  (usb)        GPIO03  RXD0   I2SO_Data        nicht nutzbar Wird für USB-Schnittstelle benötigt
+      TX NodeMCU  (usb)        GPIO01  TXD0   SPI_CS1          nicht nutzbar Wird für USB-Schnittstelle benötigt
 
 Links      
       A0 NodeMCU Analogeingang noch ungenutzt
-      S3 NodeMCU  (SPI)        noch ungenutzt  (SPIFFS SPI FlashFileSystem ?)
-      S2 NodeMCU  (SPI)        noch ungenutzt
-      S1 NodeMCU  (SPI)        noch ungenutzt
-      SC NodeMCU  (SPI)        noch ungenutzt
-      SD NodeMCU  (SPI)        noch ungenutzt
-      SK NodeMCU  (SPI)        noch ungenutzt
+      
+      S3 NodeMCU  (SPI)        noch ungenutzt  S3      GPIO10   SDD3   SPIWP         nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+      S2 NodeMCU  (SPI)        noch ungenutzt  S2      GPIO09   SDD2   SPIHD         nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+      S1 NodeMCU  (SPI)        noch ungenutzt  S1      GPIO08   SDD1   SPID   MOSI   nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+      SC NodeMCU  (SPI)        noch ungenutzt  SC      GPIO11   SDCMD  SPICS0 CS     nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+      SD NodeMCU  (SPI)        noch ungenutzt  SD      GPIO07   SDD0   SPIQ   MISO   nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
+      SK NodeMCU  (SPI)        noch ungenutzt  SK      GPIO06   SDCL   SPICLK SCLK   nicht nutzbar wird für externen Flash auf dem ESP12E Modul verwendet
       
       EN NodeMCU               noch ungenutzt
-      
+    [RST NodeMCU  REST         mit D0 verbunden um DeepSleep (stop mit zeitgesteuertem Reset) zu ermöglichen - dann kann D0 nicht weiter genutzt werden]         
       
       A2 ADS1115 Analogeingang noch ungenutzt  (evtl. Analog port SDS)
-      A3 ADS1115 Analogeingang noch ungenutzt	
+      A3 ADS1115 Analogeingang noch ungenutzt  (evtl. Boardspannung messen für Rückrechnung Nox / CO)		
 	
-					
-      [RST mit D0 verbunden um DeepSleep (stop mit zeitgesteuertem Reset) zu ermöglichen - dann kann D0 nicht weiter genutzt werden]
+      
 					
 											           
 ==============================================================================================================================
