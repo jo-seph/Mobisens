@@ -8,23 +8,30 @@
 
    Hardware:
    NodeMCU, SDS011, BME280, CJMCU-4541(MiCS-4514),GPS,
-   [CD-Card-Reader, Lorawan-transmitter]
+   [t.b.d.
+    CD-Card-Reader SPI,
+    Lorawan-transmitter,
+    MCP23017 io portexpander I2C ( GPS,SDS, over MCP ), NodeMCU SPI Ports free for SD-Card Reader
+    ]
 
 
    Done:
    OLED: simple Text Interface
    GPS: LAT, LON, Altitude, UTC Date and Time, speed, direction,
    BME280: Temperature, AirPressure, Humidity, DewPoint, SeaLevelPressure, AltitudebyAirPressure
-   SDS011: PM2.5, PM10
-   CJMCU-4514: no2 co calibration by calculating R0 R0 based on Rs and official values (evaluation tbd)
-
+   SDS011: PM2.5, PM10, loops to get sleep regularly
+   CJMCU-4514: no2 co calibration by calculating R0 R0 based on Rs and official values
+               verify calculation to real data (evaluation started)
 
    open:
-   OLED: improve numbers and figures on several screens
-   SDS011: debug occurrences of no-sleep
-   CJMCU: verify calculation to real data
-   send data to luftdaten.info, hackair, Airqn, opensense.net, own server, ...
+   OLED: improve redability of numbers and figures on several screens, brightness control
 
+   wifiscan
+   wificonnect freifunk, homenet, all open network
+   send data zu thingspeak only in homenet or freifunk
+   send data to luftdaten.info, hackair, Airqn, opensense.net, own server, ...
+   save data in array/sd-card if no wlan connected,
+   send  saved data empty cache
 
 
    all based on code, examples and licenses of arduino/github libraries from
@@ -489,7 +496,7 @@ void CJMCU()
 
   adc0 = ads.readADC_SingleEnded(0);  //NO2
   adc1 = ads.readADC_SingleEnded(1);  //CO
-  adc2 = ads.readADC_SingleEnded(2);  //Boardspannung zum prüfen der Berechnung ??
+  adc2 = ads.readADC_SingleEnded(2);  //Boardspannung zum prüfen der Berechnung
   adc3 = ads.readADC_SingleEnded(3);  //MQ-135 ??
 
   Serial.print("adc0 "); Serial.print(adc0); Serial.print("  adc1 "); Serial.println(adc1);
@@ -505,7 +512,9 @@ void CJMCU()
 
   int Rload_no2 = 22000;
   int Rload_co  = 47000;
-  int U_Board   = 5.0;                        // oder adc2*0.0001875  // Boardspannung
+  float U_Board   = adc2 * 0.0001875; // Boardspannung
+  Serial.println(U_Board);
+
 
   float U_Rload_no2 = (adc0 * 0.0001875);
   float U_Rload_co  = (adc1 * 0.0001875);
@@ -573,11 +582,11 @@ void CJMCU()
   Serial.print("CJMCU  "); Serial.print(TextzeileNOx); Serial.print(" "); Serial.println(TextzeileCO);
   Serial.println(" ");
 
-  Noxadc0 =  26666 - adc0;    // adc2 - adc0;
+  // Noxadc0 =  26666 - adc0;    // adc2 - adc0;
 
   //  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-  Coadc1  =  26666 - adc1;    // adc2 - adc1;
+  // Coadc1  =  26666 - adc1;    // adc2 - adc1;
 
   // TextzeileMiCS=String("N "+String(Noxadc0)+"z C "+String(Coadc1)+"z");
   TextzeileMiCS  = String(PH + " " + String(int(Noxadc0)) + "");

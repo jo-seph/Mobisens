@@ -252,30 +252,31 @@ NODEMCU PIN und GPIO  (General Purpose Input Output = allzweckeinausgabeanschlü
 Einige Ports sind auf dem NodeMCU-Board oder auch ESP-12E-Modul selbst in Verwendung.
 Hier eine Liste der intern verwendeten Signale (zusammengeklaubt)
  
+ 
 Rechts
 
 Pin  Druck  GPIO    Zusätzl.  Fkt.          Beschr.
 ---  ---    ------  ----------------------  ---------------------------------------------------------------------------------------------------------------
 01   D0     GPIO16  USER   WAKE             GPIO16 read/write. ODER RST f DeepSleep, No support for open-drain/interrupt/pwm/i2c/ow., Led Kathode liegt an
-02   D1     GPIO05  SCL                     I2C_SCL
-03   D2     GPIO04  SDA                     I2C_SDA
+02   D1     GPIO05  I2C-SCL                 I2C_SCL
+03   D2     GPIO04  I2C-SDA                 I2C_SDA
 04   D3     GPIO00  RXD1   FLASH  SPI_CS2   Geht an Taster FLASH, kann jedoch ansonsten genutzt werden
 05   D4     GPIO02  TXD1   I2SO_WS          Blaue LED des ESP12E Moduls
 06   3V3                                    Spannung Ausgang
 07   GND                                    Masse
-08   D5     GPIO14         HS_SPI_CLK       SPI
-09   D6     GPIO12         H_SPI_Q_MISO     SPI
-10   D7     GPIO13  RXD2   H_SPI_D_MOSI     SPI
-11   D8     GPIO15  TXD2   H_SPI_CS         SPI
-12   D9     GPIO03  RXD0   I2SO_Data        nicht nutzbar Wird für USB-Schnittstelle benötigt
-13   D10    GPIO01  TXD0   SPI_CS1          nicht nutzbar Wird für USB-Schnittstelle benötigt
+08   D5     GPIO14         HS_SPI_CLK       SPI Clock Master
+09   D6     GPIO12         H_SPI_Q_MISO     SPI Master in Slave out
+10   D7     GPIO13  RXD2   H_SPI_D_MOSI     SPI Master out Slave in
+11   D8     GPIO15  TXD2   H_SPI_CS         SPI Master select
+12   D9     GPIO03  RXD0   I2SO_Data        nicht nutzbar Wird für UART USB-Schnittstelle benötigt
+13   D10    GPIO01  TXD0   SPI_CS1          nicht nutzbar Wird für UART USB-Schnittstelle benötigt
 14   GND                                    Masse
 15   3V3                                    Spannung Ausgang
 
 
 MITTE
 
-microUSB  Spannungsversorgung und Ausgang seriell (D9/D10 umgeleitet)
+microUSB  5V Spannungsversorgung und io seriell (D9/D10 umgeleitet)
 
 
 LINKS
@@ -304,28 +305,37 @@ Pin Druck   GPIO     Zusätzl.               Beschr.
 
 https://github.com/esp8266/Arduino/issues/584
  
+Rechts 
+ 
                      PIN    GPIO
-static const uint8_t D0   = 16;
-static const uint8_t D1   = 5;
-static const uint8_t D2   = 4;
-static const uint8_t D3   = 0;
-static const uint8_t D4   = 2;
-static const uint8_t D5   = 14;
-static const uint8_t D6   = 12;
-static const uint8_t D7   = 13;
-static const uint8_t D8   = 15;
+static const uint8_t D0   = 16;             nicht nutzbar wenn für DeepSleep wakeup verwendet
+static const uint8_t D1   = 5;              nicht nutzbar wenn für I2C verwendet
+static const uint8_t D2   = 4;              nicht nutzbar wenn für I2C verwendet
+static const uint8_t D3   = 0;              Geht an Taster FLASH, kann jedoch ansonsten genutzt werden
+static const uint8_t D4   = 2;              bei Nutzung blinkt Blaue LED des ESP12E Moduls
+static const uint8_t D5   = 14;             SPI Clock Master
+static const uint8_t D6   = 12;             SPI Master in Slave out
+static const uint8_t D7   = 13;             SPI Master out Slave in
+static const uint8_t D8   = 15;             SPI Master select
 
 
 static const uint8_t D9   = 3;               nicht nutzbar Wird für USB-Schnittstelle benötigt
 static const uint8_t D10  = 1;               nicht nutzbar Wird für USB-Schnittstelle benötigt
 
 
+Links
+
 1 Analogeingang      A0
 
 
 
 
-Insgesamt NodeMCU: Neun Pins plus A0 sind nutzbar
+Insgesamt NodeMCU: 
+Neun Pins plus A0 sind nutzbar, 
+wenn i2c und SPI genutzt werden nur noch 2 (D3,D4) plus A0, (Ausbau mit i2c Expander analoginput ads1115 4 ports, io mcp23107 16 ports)
+ soll dazu  D4 nicht blinken nur D3 plus A0
+
+  
 
   
  <--------------------------------------------------------->
