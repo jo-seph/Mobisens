@@ -223,7 +223,7 @@ void BME280Data()
     humi = 0.99; //für kompensationrechnung
   }
 
-  TextzeileT = String(temp, 1) + "°C  " + String(hum, 1) + "%  " + String(seaLevelPres / 100, 1) + "hPa";
+  TextzeileT = String(temp, 1) + "°C  " + String(hum, 1) + "%  " + String(pres / 100, 1) + "hPa";
 
   //   bme_wartezeit = millis() + 2000;
 
@@ -528,8 +528,8 @@ void CJMCU()
 
   // Widerstandverhältnis RsR0_  =  Rs/R0 = Rs_  / R0
 
-  float RsR0_no2 = Rs_no2 / 386158;            // 386158 aus Stachusmessung
-  float RsR0_co  = Rs_co  / 9472;              //   9472 aus Stachusmessung
+  float RsR0_no2 = Rs_no2 / 46454;    // 386158 aus Stachusmessung 46454 aus landshuterstr messung
+  float RsR0_co  = Rs_co  / 15027;    //   9472 aus Stachusmessung 15027 aus landshuterstr messung
 
   //Textzeileppm = String(int(Rs_no2)) + "   " + String(int(Rs_co));
 
