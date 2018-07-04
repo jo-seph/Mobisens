@@ -167,19 +167,25 @@ void Gehps()
 #include <EnvironmentCalculations.h>
 #include <BME280I2C.h>
 
-BME280I2C bme;
+BME280I2C::Settings settings(
+  BME280::OSR_X1,
+  BME280::OSR_X1,
+  BME280::OSR_X1,
+  BME280::Mode_Forced,
+  BME280::StandbyTime_1000ms,
+  BME280::Filter_16,
+  BME280::SpiEnable_False
+  // ,  BME280::I2CAddr_0x76
+);
 
-/*  BME280I2C::Settings settings(
-    BME280::OSR_X1,
-    BME280::OSR_X1,
-    BME280::OSR_X1,
-    BME280::Mode_Forced,
-    BME280::StandbyTime_1000ms,
-    BME280::Filter_Off );
-
-    Default : forced mode, standby time = 1000 ms
-    Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off,
+/*
+  Default : forced mode, standby time = 1000 ms
+  Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off,
   /**/
+
+BME280I2C bme(settings);
+
+
 //--------------------------
 
 float humi;     // für kompensationrechnung
@@ -201,21 +207,36 @@ void BME280Data()
   BME280::Filter     filter(BME280::Filter_Off);
   BME280::Mode         mode(BME280::Mode_Forced);
 
-  EnvironmentCalculations::AltitudeUnit envAltUnit  =  EnvironmentCalculations::AltitudeUnit_Meters;
-  EnvironmentCalculations::TempUnit     envTempUnit =  EnvironmentCalculations::TempUnit_Celsius;
 
   bme.read(pres, temp, hum, tempUnit, presUnit);
 
+
+  EnvironmentCalculations::AltitudeUnit envAltUnit  =  EnvironmentCalculations::AltitudeUnit_Meters;
+  EnvironmentCalculations::TempUnit     envTempUnit =  EnvironmentCalculations::TempUnit_Celsius;
+
+
+  // To get correct local altitude/height (QNE) the reference Pressure
+  // should be taken from meteorologic messages (QNH or QFF)
+
   float altitude     = EnvironmentCalculations::Altitude(pres, envAltUnit);
   float dewPoint     = EnvironmentCalculations::DewPoint(temp, hum, envTempUnit);
-  float seaLevelPres = EnvironmentCalculations::EquivalentSeaLevelPressure(altitude, temp, pres);
+  float seaLevelPres = EnvironmentCalculations::EquivalentSeaLevelPressure(AltGPS, temp, pres);
+  //  float absHum       = EnvironmentCalculations::AbsoluteHumidity(temp, hum, envTempUnit);
+
 
   taupunkt = dewPoint;
   AltBaro = altitude;
   TextzeileH = "BME alt Baro-GPS " + String(AltBaro - AltGPS) + "m ";
 
   Serial.println(TextzeileH);
-  Serial.print("BME Höhe ü NN :  "); Serial.print(altitude);  Serial.print("m  Taupunkt: "); Serial.print(dewPoint); Serial.print("°C "); Serial.print("Luftdruck N.N.: ");  Serial.print(seaLevelPres / 100); Serial.println("hPa ");
+  Serial.print("BME Höhe ü NN :  "); Serial.print(altitude); Serial.println("m ");
+  Serial.print("Temperatur:      "); Serial.print(temp, 1); Serial.println("°C ");
+  Serial.print("relative Feuchte:"); Serial.print(hum); Serial.println("% ");
+  //  Serial.print("absolute Feuchte:"); Serial.print(absHum); Serial.println("  ");
+  Serial.print("Taupunkt:        "); Serial.print(dewPoint); Serial.println("°C ");
+  Serial.print("Luftdruck     :  "); Serial.print(pres / 100); Serial.println("hPa ");
+  Serial.print("Luftdruck N.N.:  "); Serial.print(seaLevelPres / 100); Serial.println("hPa ");
+
 
   humi = hum / 100;
   if (humi > 0.99)
@@ -502,34 +523,35 @@ void CJMCU()
   Serial.print("adc0 "); Serial.print(adc0); Serial.print("  adc1 "); Serial.println(adc1);
   Serial.print("adc2 "); Serial.print(adc2); Serial.print("  adc3 "); Serial.println(adc3);
 
-  TextzeileMiCS = "";
-  TextzeileMiCSC = "";
+  TextzeileMiCS     = "";
+  TextzeileMiCSC    = "";
 
   // Widerstand RS  R=U/I oder  Rs= Rload / Uload * URs
   // U=R*I    I=U/R    R=U/I
   // Widerstand Rs_ = Us/Is = Strom ist gleich in reihe  =  Urs    /   (Ur0/Rload)
   //                = (UBoard - Adceinstellung * zaehler)          /   (Adceinstellung * zaehler  / Rload)
 
-  int Rload_no2 = 22000;
-  int Rload_co  = 47000;
-  float U_Board   = adc2 * 0.0001875; // Boardspannung
+  int Rload_no2     = 22000;
+  int Rload_co      = 47000;
+  float U_Board     = adc2 * 0.0001875; // Boardspannung
+
   Serial.println(U_Board);
 
 
   float U_Rload_no2 = (adc0 * 0.0001875);
   float U_Rload_co  = (adc1 * 0.0001875);
 
-  float I_no2 = (U_Rload_no2 / Rload_no2);
-  float I_co  = (U_Rload_co  / Rload_co );
+  float I_no2       = (U_Rload_no2 / Rload_no2);
+  float I_co        = (U_Rload_co  / Rload_co );
 
-  float Rs_no2 = (U_Board - U_Rload_no2) / I_no2;
-  float Rs_co  = (U_Board - U_Rload_co ) / I_co ;
+  float Rs_no2      = (U_Board - U_Rload_no2) / I_no2;
+  float Rs_co       = (U_Board - U_Rload_co ) / I_co ;
 
 
   // Widerstandverhältnis RsR0_  =  Rs/R0 = Rs_  / R0
 
-  float RsR0_no2 = Rs_no2 / 46454;    // 386158 aus Stachusmessung 46454 aus landshuterstr messung
-  float RsR0_co  = Rs_co  / 15027;    //   9472 aus Stachusmessung 15027 aus landshuterstr messung
+  float RsR0_no2    = Rs_no2 / 46454;    // 386158 aus Stachusmessung 46454 aus landshuterstr messung
+  float RsR0_co     = Rs_co  / 15027;    //   9472 aus Stachusmessung 15027 aus landshuterstr messung
 
   //Textzeileppm = String(int(Rs_no2)) + "   " + String(int(Rs_co));
 
@@ -842,7 +864,7 @@ void Texte()
   display.setFont(ArialMT_Plain_10);
   display.setTextAlignment(TEXT_ALIGN_RIGHT);
 
-  display.drawString(128, 10, TextzeileG);      // Blau gps Lat Lon höhe
+  display.drawString(128, 10, TextzeileG);          // Blau gps Lat Lon höhe
   display.drawString(128, 20, String(AltBaro, 1));  // Blau Höhe aus Barometer
 
 
@@ -850,29 +872,32 @@ void Texte()
 
   display.drawString(64, 20, sek);
   //display.drawString(64, 20, Textzeileppm);
-  //display.drawString(64, 32, TextzeileNOxCO);   // no2 co rs/r0
+  //display.drawString(64, 32, TextzeileNOxCO);     // no2 co rs/r0
 
   display.setTextAlignment(TEXT_ALIGN_LEFT);
 
-  display.drawString(00, 00, TextzeileT);      // Blau C % hPa Temp Feuchte Luftdruck
-  // display.drawString(00, 12, TextzeileSDS); // Blau Pm25  PM10
-  // display.drawString(00, 10, TextzeileG);      // Blau gps Lat Lon höhe
-  display.drawString(00, 20, Textzeilehm);     // GPS UTC hh:min
+  display.drawString(00, 00, TextzeileT);           // Blau C % hPa Temp Feuchte Luftdruck
+  // display.drawString(00, 12, TextzeileSDS);      // Blau Pm25  PM10
+  // display.drawString(00, 10, TextzeileG);        // Blau gps Lat Lon höhe
+  display.drawString(00, 20, Textzeilehm);          // GPS UTC hh:min
 
   display.setFont(ArialMT_Plain_16);
 
-  display.drawString(00, 32, TextzeileSDS);    // Blau PM25c PM10c
+  display.drawString(00, 32, TextzeileSDS);         // Blau PM25c PM10c
 
   //display.drawString(00, 32, Textzeileppm);
-  display.drawString(00, 48, TextzeileNOx);    // no2  Werte
-  //display.drawString(00, 48, TextzeileMiCS);   // Orange No2
-  //display.drawString(64, 48, TextzeileMiCSC);  // Orange CO
+  display.drawString(00, 48, TextzeileNOx);         // no2  Werte
+  //display.drawString(00, 48, TextzeileMiCS);      // Orange No2
+  //display.drawString(64, 48, TextzeileMiCSC);     // Orange CO
 
   display.setTextAlignment(TEXT_ALIGN_RIGHT);
 
-  display.drawString(128, 48, TextzeileCO);    //  co Werte
+  display.drawString(128, 48, TextzeileCO);         //  co Werte
 }
 //--End Texte -------------------------------------------------------------
+
+
+
 
 
 
@@ -885,7 +910,7 @@ void setup() {
 
   /*---------------------------------------------------------*/
 
-  ss.begin(9600);                  // SoftSerial für GPS
+  ss.begin(9600);                     // SoftSerial für GPS
 
   /*--------------------------------------------------------*/
 
@@ -908,6 +933,8 @@ void setup() {
   WiFi.mode(WIFI_OFF);                // WLAN ausschalten  /**/
   //--------------------------------------------
 
+
+
   // The ADC input range (or gain) can be changed via the following
   // functions, but be careful never to exceed VDD +0.3V max, or to
   // exceed the upper and lower limits if you adjust the input range!
@@ -929,10 +956,10 @@ void setup() {
 
   bme.begin();                     //Starte bme280
 
+
   /*--------------------------------------------------------*/
 
   my_sdsv.begin(D1, D2);   //  my_sds.begin(RX-ESP(TX-SDS),TX-ESP(RX-SDS));
-
 
   int _error = my_sdsv.SetQueryReportingMode();
   Serial.print(" Setup SetQueryReportingMode _error:  "); Serial.println(_error);
