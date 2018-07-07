@@ -244,7 +244,8 @@ void BME280Data()
     humi = 0.99; //für kompensationrechnung
   }
 
-  TextzeileT = String(temp, 1) + "°C  " + String(hum, 1) + "%  " + String(pres / 100, 1) + "hPa";
+  // TextzeileT = String(temp, 1) + "°C  " + String(hum, 1) + "%  " + String(pres / 100, 1) + "hPa";
+  TextzeileT = String(temp, 1) + " " + String(hum, 1) + " " + String(dewPoint, 1) + " " + String(pres / 100, 1);
 
   //   bme_wartezeit = millis() + 2000;
 
@@ -547,11 +548,28 @@ void CJMCU()
   float Rs_no2      = (U_Board - U_Rload_no2) / I_no2;
   float Rs_co       = (U_Board - U_Rload_co ) / I_co ;
 
+  int R0_no2 = 46454;
+  // 386158 aus Stachusaufschreibung
+  //  46454 aus landshuterstr messung
+  //  43149 aus landshutermessung II 2h vorlauf
+  //    900  aircologne
+  //    200 panstamp
+  //  82000 piaq
+
+  int R0_co = 15027;
+  //   9472 aus Stachusaufschreibung
+  //  15027 aus landshuterstr messung
+  //  19092 aus landshutermessung II 2h vorlauf
+  //    200 Aircologne
+  // 750000 panstamp
+  //    350   piaq
+
 
   // Widerstandverhältnis RsR0_  =  Rs/R0 = Rs_  / R0
 
-  float RsR0_no2    = Rs_no2 / 46454;    // 386158 aus Stachusmessung 46454 aus landshuterstr messung
-  float RsR0_co     = Rs_co  / 15027;    //   9472 aus Stachusmessung 15027 aus landshuterstr messung
+  float RsR0_no2    = Rs_no2 / R0_no2;
+  float RsR0_co     = Rs_co  / R0_co;
+
 
   //Textzeileppm = String(int(Rs_no2)) + "   " + String(int(Rs_co));
 
@@ -813,7 +831,7 @@ void Essds_C()
   p10c = (p10 / (1 + (0.81559 * pow(humi, 5.83411))));
   /**/
 
-  TextzeileSDSc = "25: " + String(p25c, 1) + " 10: " + String(p10c, 1) + "";
+  TextzeileSDSc = "2,5: " + String(p25c, 0) + " 10: " + String(p10c, 0) + "";
   Serial.println("SDSc       " + TextzeileSDSc);
 }
 //----Ende SDS_C---------------------------------------------------------------
@@ -879,7 +897,7 @@ void Texte()
   display.drawString(00, 00, TextzeileT);           // Blau C % hPa Temp Feuchte Luftdruck
   // display.drawString(00, 12, TextzeileSDS);      // Blau Pm25  PM10
   // display.drawString(00, 10, TextzeileG);        // Blau gps Lat Lon höhe
-  display.drawString(00, 20, Textzeilehm);          // GPS UTC hh:min
+  // display.drawString(00, 20, Textzeilehm);          // GPS UTC hh:min
 
   display.setFont(ArialMT_Plain_16);
 
