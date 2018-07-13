@@ -548,21 +548,25 @@ void CJMCU()
   float Rs_no2      = (U_Board - U_Rload_no2) / I_no2;
   float Rs_co       = (U_Board - U_Rload_co ) / I_co ;
 
-  int R0_no2 = 46454;
+  int R0_no2 = 18000;
   // 386158 aus Stachusaufschreibung
   //  46454 aus landshuterstr messung
   //  43149 aus landshutermessung II 2h vorlauf
   //    900  aircologne
   //    200 panstamp
+  //  10000 smartcitizen.me
   //  82000 piaq
+  //  18000 aus messungen hu daheim
 
-  int R0_co = 15027;
+  int R0_co = 110346;
   //   9472 aus Stachusaufschreibung
   //  15027 aus landshuterstr messung
   //  19092 aus landshutermessung II 2h vorlauf
   //    200 Aircologne
   // 750000 panstamp
+  //  75000 smartcitizen.me
   //    350   piaq
+  // 110346 aus messungen hu daheim
 
 
   // Widerstandverhältnis RsR0_  =  Rs/R0 = Rs_  / R0
